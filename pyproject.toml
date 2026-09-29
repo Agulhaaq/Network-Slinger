@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "networkslinger"
+version = "1.0.0"
+description = "Advanced Async Network Scrawler, Service Reconnaissance, Banner Grabbing & Topology Auditor"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "rich>=13.0.0",
+    "psutil>=5.9.0",
+    "httpx>=0.24.0",
+    "beautifulsoup4>=4.12.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "websockets>=11.0",
+    "pydantic>=2.0.0",
+    "cryptography>=41.0.0"
+]
+
+[project.scripts]
+networkslinger = "networkslinger.cli:main"
+slinger = "networkslinger.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["networkslinger*"]

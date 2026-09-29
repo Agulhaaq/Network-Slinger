@@ -1,0 +1,310 @@
+{
+  "scan_id": "d80d5220",
+  "started_at": "2026-09-29T21:59:23.260136",
+  "finished_at": "2026-09-29T21:59:33.471330",
+  "duration_seconds": 10.21,
+  "config": {
+    "targets": [
+      "192.168.1.1"
+    ],
+    "port_profile": "fast",
+    "custom_ports": "",
+    "concurrency": 150,
+    "timeout": 1.0,
+    "crawl_web": true,
+    "deep_web_crawl": false,
+    "enable_multicast": true,
+    "include_localhost": false
+  },
+  "summary": {
+    "total_hosts_scanned": 1,
+    "live_hosts_found": 1,
+    "total_open_ports": 8,
+    "total_web_services": 2,
+    "critical_risks": 0,
+    "high_risks": 1,
+    "medium_risks": 0,
+    "low_risks": 0
+  },
+  "hosts": [
+    {
+      "ip": "192.168.1.1",
+      "mac_address": "D4:1A:D1:23:DA:A0",
+      "vendor": "TP-Link",
+      "hostname": ".::Welcome to the Web-Based Co",
+      "device_type": "Gateway / Router",
+      "is_alive": true,
+      "latency_ms": 8.58,
+      "open_ports": [
+        {
+          "port": 21,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "ftp",
+          "banner": "220---------- Welcome to Pure-FTPd [privsep] ----------",
+          "details": {
+            "anonymous_allowed": false
+          },
+          "risk_level": "MEDIUM",
+          "risk_reason": "FTP is unencrypted; check for anonymous access"
+        },
+        {
+          "port": 22,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "ssh",
+          "banner": "SSH-2.0-dropbear_2018.76",
+          "details": {
+            "protocol": "SSH",
+            "raw_banner": "SSH-2.0-dropbear_2018.76"
+          },
+          "risk_level": "INFO",
+          "risk_reason": ""
+        },
+        {
+          "port": 23,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "telnet",
+          "banner": "\u0001\u001f\u0001\u0003",
+          "details": {},
+          "risk_level": "HIGH",
+          "risk_reason": "Telnet protocol transmits all credentials in cleartext"
+        },
+        {
+          "port": 53,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "dns",
+          "banner": "",
+          "details": {},
+          "risk_level": "INFO",
+          "risk_reason": ""
+        },
+        {
+          "port": 80,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "http",
+          "banner": "",
+          "details": {},
+          "risk_level": "INFO",
+          "risk_reason": ""
+        },
+        {
+          "port": 139,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "netbios-ssn",
+          "banner": "",
+          "details": {},
+          "risk_level": "INFO",
+          "risk_reason": ""
+        },
+        {
+          "port": 443,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "https",
+          "banner": "",
+          "details": {},
+          "risk_level": "INFO",
+          "risk_reason": ""
+        },
+        {
+          "port": 445,
+          "protocol": "tcp",
+          "state": "open",
+          "service": "smb",
+          "banner": "",
+          "details": {},
+          "risk_level": "INFO",
+          "risk_reason": ""
+        }
+      ],
+      "web_services": [
+        {
+          "url": "http://192.168.1.1",
+          "port": 80,
+          "is_https": false,
+          "status_code": 200,
+          "title": ".::Welcome to the Web-Based Configurator::.",
+          "server": "",
+          "powered_by": "",
+          "tech_stack": [
+            "Bootstrap"
+          ],
+          "ssl_info": null,
+          "headers": {
+            "content-type": "text/html",
+            "cache-control": "no-cache",
+            "last-modified": "Wed, 12 Feb 2020 16:55:46 GMT",
+            "content-length": "1422",
+            "date": "Tue, 29 Sep 2026 19:59:32 GMT",
+            "x-frame-options": "sameorigin",
+            "content-security-policy": "frame-ancestors 'self'"
+          },
+          "missing_security_headers": [
+            "Strict-Transport-Security (HSTS)",
+            "X-Content-Type-Options (MIME Sniffing Protection)",
+            "Referrer-Policy"
+          ],
+          "discovered_endpoints": [],
+          "links_found": [],
+          "favicon_hash": null
+        },
+        {
+          "url": "https://192.168.1.1",
+          "port": 443,
+          "is_https": true,
+          "status_code": 200,
+          "title": ".::Welcome to the Web-Based Configurator::.",
+          "server": "",
+          "powered_by": "",
+          "tech_stack": [
+            "Bootstrap"
+          ],
+          "ssl_info": {
+            "subject": "ZyXELcert",
+            "issuer": "ZyXELcert",
+            "valid_from": "2015-01-01T12:00:00Z",
+            "valid_to": "2025-01-01T12:00:00Z",
+            "days_left": -637,
+            "is_expired": true,
+            "is_self_signed": true,
+            "san_list": [],
+            "signature_algorithm": "sha512WithRSAEncryption"
+          },
+          "headers": {
+            "content-type": "text/html",
+            "cache-control": "no-cache",
+            "last-modified": "Wed, 12 Feb 2020 16:55:46 GMT",
+            "content-length": "1422",
+            "date": "Tue, 29 Sep 2026 19:59:32 GMT",
+            "x-frame-options": "sameorigin",
+            "content-security-policy": "frame-ancestors 'self'"
+          },
+          "missing_security_headers": [
+            "Strict-Transport-Security (HSTS)",
+            "X-Content-Type-Options (MIME Sniffing Protection)",
+            "Referrer-Policy"
+          ],
+          "discovered_endpoints": [],
+          "links_found": [],
+          "favicon_hash": null
+        }
+      ],
+      "ssdp_info": null,
+      "netbios_name": null,
+      "mdns_services": [],
+      "security_findings": [
+        {
+          "title": "Unencrypted Telnet Service Exposed",
+          "severity": "HIGH",
+          "description": "Telnet (port 23) transmits all keystrokes, credentials, and session data in cleartext.",
+          "port": 23,
+          "remediation": "Disable the Telnet daemon and replace with SSH (Secure Shell) on port 22."
+        },
+        {
+          "title": "Expired SSL/TLS Certificate",
+          "severity": "HIGH",
+          "description": "SSL certificate for https://192.168.1.1 expired on 2025-01-01 12:00:00+00:00.",
+          "port": 443,
+          "remediation": "Renew the SSL/TLS certificate immediately with an authorized Certificate Authority."
+        },
+        {
+          "title": "Self-Signed SSL Certificate",
+          "severity": "LOW",
+          "description": "The certificate on port 443 is self-signed, causing browser trust warnings.",
+          "port": 443,
+          "remediation": "Deploy a trusted certificate from Let's Encrypt or your enterprise PKI."
+        },
+        {
+          "title": "Missing HSTS Header (https://192.168.1.1)",
+          "severity": "LOW",
+          "description": "HTTP Strict Transport Security (HSTS) header is missing, allowing potential SSL-stripping attacks.",
+          "port": 443,
+          "remediation": "Add 'Strict-Transport-Security: max-age=31536000; includeSubDomains' to response headers."
+        }
+      ],
+      "risk_score": 58,
+      "risk_level": "HIGH",
+      "os_hint": "",
+      "last_seen": "2026-09-29T21:59:28.307180"
+    }
+  ],
+  "topology": {
+    "nodes": [
+      {
+        "id": "gateway_hub",
+        "label": "Gateway (192.168.1.1)",
+        "group": "gateway",
+        "ip": "192.168.1.1",
+        "device_type": "Gateway / Router",
+        "risk_level": "INFO",
+        "details": {
+          "gateway_ip": "192.168.1.1"
+        }
+      },
+      {
+        "id": "host_192.168.1.1",
+        "label": ".::Welcome to the Web-Based Co\n(TP-Link)",
+        "group": "gateway_/_router",
+        "ip": "192.168.1.1",
+        "device_type": "Gateway / Router",
+        "risk_level": "HIGH",
+        "details": {
+          "mac": "D4:1A:D1:23:DA:A0",
+          "vendor": "TP-Link",
+          "ports_count": 8,
+          "risk_score": 58,
+          "findings_count": 4
+        }
+      },
+      {
+        "id": "svc_192.168.1.1_80",
+        "label": ":80 HTTP",
+        "group": "service_web",
+        "ip": "192.168.1.1",
+        "device_type": "Web Service",
+        "risk_level": "INFO",
+        "details": {
+          "url": "http://192.168.1.1",
+          "title": ".::Welcome to the Web-Based Configurator::."
+        }
+      },
+      {
+        "id": "svc_192.168.1.1_443",
+        "label": ":443 HTTP",
+        "group": "service_web",
+        "ip": "192.168.1.1",
+        "device_type": "Web Service",
+        "risk_level": "INFO",
+        "details": {
+          "url": "https://192.168.1.1",
+          "title": ".::Welcome to the Web-Based Configurator::."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "gateway_hub",
+        "target": "host_192.168.1.1",
+        "label": "8.58ms",
+        "edge_type": "network_link"
+      },
+      {
+        "source": "host_192.168.1.1",
+        "target": "svc_192.168.1.1_80",
+        "label": "80",
+        "edge_type": "service_port"
+      },
+      {
+        "source": "host_192.168.1.1",
+        "target": "svc_192.168.1.1_443",
+        "label": "443",
+        "edge_type": "service_port"
+      }
+    ]
+  }
+}

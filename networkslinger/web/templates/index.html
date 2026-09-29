@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Slinger - Advanced Network Scrawler & Topology Recon</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Vis.js Network for interactive topology -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #07090e;
+            --bg-card: #0e131f;
+            --bg-card-hover: #141b2c;
+            --bg-elevated: #182236;
+            --accent-cyan: #00f3ff;
+            --accent-green: #00ffa3;
+            --accent-yellow: #ffd000;
+            --accent-orange: #ff7b00;
+            --accent-red: #ff2a55;
+            --accent-purple: #9d4edd;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-dim: #475569;
+            --border-glow: rgba(0, 243, 255, 0.2);
+            --border-dim: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Outfit', -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Header Navigation */
+        header {
+            background: rgba(14, 19, 31, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-dim);
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00f3ff 0%, #00ffa3 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #07090e;
+            font-size: 20px;
+            font-weight: 900;
+            box-shadow: 0 0 16px rgba(0, 243, 255, 0.4);
+        }
+        .brand-title {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #ffffff, #00f3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+        .status-dot.scanning {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+            animation: pulse 1.2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Nav Tabs */
+        .nav-tabs {
+            display: flex;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-dim);
+            padding: 0 28px;
+            gap: 4px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 14px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+        .tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.03);
+        }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            padding: 24px 28px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Stat Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stat-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+        }
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .stat-info .stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .stat-info .stat-lbl {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Scrawler Launch Panel */
+        .scrawl-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .input-text {
+            background: var(--bg-base);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-text:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+        .quick-targets {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+        .target-chip {
+            background: var(--bg-elevated);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .target-chip:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        .profile-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        .profile-btn {
+            background: var(--bg-base);
+            border: 1px solid var(--border-dim);
+            color: var(--text-secondary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .profile-btn.active {
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .launch-btn {
+            background: linear-gradient(135deg, #00f3ff 0%, #00c4cc 100%);
+            color: #07090e;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            border: none;
+            border-radius: 8px;
+            padding: 13px 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 243, 255, 0.3);
+            transition: all 0.2s;
+            height: 46px;
+        }
+        .launch-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(0, 243, 255, 0.5);
+        }
+        .launch-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Advanced Options Toggle */
+        .options-row {
+            display: flex;
+            gap: 24px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-dim);
+            flex-wrap: wrap;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .checkbox-label input {
+            accent-color: var(--accent-cyan);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Progress & Live Console */
+        .progress-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .progress-stage {
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        .progress-percent {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+        .progress-bar-bg {
+            background: var(--bg-base);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--border-dim);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00f3ff, #00ffa3);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.6);
+        }
+        .terminal-feed {
+            background: #000;
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ffa3;
+            max-height: 160px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Topology Canvas Container */
+        #topology-container {
+            width: 100%;
+            height: 600px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        .topology-overlay {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(14, 19, 31, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-dim);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* Data Tables */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .table-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            background: var(--bg-base);
+            border: 1px solid var(--border-dim);
+            color: var(--text-primary);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            width: 260px;
+        }
+        .search-box:focus { border-color: var(--accent-cyan); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 14px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-dim);
+            font-size: 14px;
+        }
+        th {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-critical { background: rgba(255, 42, 85, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .badge-high { background: rgba(255, 123, 0, 0.15); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+        .badge-medium { background: rgba(255, 208, 0, 0.15); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+        .badge-low { background: rgba(0, 255, 163, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-info { background: rgba(0, 243, 255, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+
+        .port-pill {
+            display: inline-block;
+            background: rgba(0, 243, 255, 0.08);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            margin: 2px;
+        }
+        .tech-tag {
+            display: inline-block;
+            background: rgba(255, 208, 0, 0.1);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 208, 0, 0.2);
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 11px;
+            margin: 2px;
+        }
+
+        /* Web Apps Grid */
+        .web-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 20px;
+        }
+        .web-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .web-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+        .web-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .web-url {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .web-url:hover { text-decoration: underline; }
+        .web-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .web-server {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Host Inspector Drawer */
+        .drawer-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .drawer {
+            position: fixed;
+            top: 0; right: -550px; bottom: 0;
+            width: 520px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border-glow);
+            z-index: 201;
+            padding: 28px;
+            overflow-y: auto;
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+        }
+        .drawer.open { right: 0; }
+        .drawer-overlay.open { display: block; opacity: 1; }
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-dim);
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: #fff; }
+
+        /* Export Tab */
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .export-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dim);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+        .export-btn {
+            margin-top: 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-glow);
+            color: var(--accent-cyan);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .export-btn:hover {
+            background: var(--accent-cyan);
+            color: #07090e;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">⚡</div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="brand-title">NETWORK SLINGER</span>
+                    <span class="brand-badge">SCRAWLER v1.0</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="status-pill">
+                <div class="status-dot" id="live-dot"></div>
+                <span id="live-status">ENGINE READY</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('radar')">📡 Radar & Scrawler</button>
+        <button class="tab-btn" onclick="switchTab('topology')">🕸️ Topology Graph</button>
+        <button class="tab-btn" onclick="switchTab('hosts')">💻 Discovered Hosts (<span id="tab-host-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('web')">🌐 Web Applications (<span id="tab-web-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('security')">🛡️ Security Audit (<span id="tab-vuln-count">0</span>)</button>
+        <button class="tab-btn" onclick="switchTab('export')">📦 Export & Reports</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main>
+        <!-- Top Stats Row -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(0, 243, 255, 0.1); color: var(--accent-cyan);">🖥️</div>
+                <div class="stat-info">
+                    <div class="stat-val" id="stat-hosts" style="color: var(--accent-cyan);">0</div>
+                    <div class="stat-lbl">Live Hosts Found</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(0, 255, 163, 0.1); color: var(--accent-green);">🔌</div>
+                <div class="stat-info">
+                    <div class="stat-val" id="stat-ports" style="color: var(--accent-green);">0</div>
+                    <div class="stat-lbl">Open Ports</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(255, 208, 0, 0.1); color: var(--accent-yellow);">🌐</div>
+                <div class="stat-info">
+                    <div class="stat-val" id="stat-web" style="color: var(--accent-yellow);">0</div>
+                    <div class="stat-lbl">Web Applications</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: rgba(255, 42, 85, 0.1); color: var(--accent-red);">🚨</div>
+                <div class="stat-info">
+                    <div class="stat-val" id="stat-risks" style="color: var(--accent-red);">0</div>
+                    <div class="stat-lbl">High / Critical Risks</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: Radar & Scrawler Control -->
+        <div id="tab-content-radar">
+            <div class="scrawl-panel">
+                <div class="panel-header">
+                    <div class="panel-title">🚀 Network Scrawl Launcher</div>
+                    <span style="font-size: 13px; color: var(--text-secondary);" id="detected-gateway-info">Default Gateway: Resolving...</span>
+                </div>
+
+                <div class="form-grid">
+                    <!-- Target Input -->
+                    <div class="form-group">
+                        <label class="form-label">Target Network (CIDR / IP Range)</label>
+                        <input type="text" id="target-input" class="input-text" placeholder="e.g. 192.168.1.0/24, 10.0.0.1-50, or 127.0.0.1">
+                        <div class="quick-targets" id="quick-targets-container">
+                            <!-- Populated dynamically with detected LAN subnets -->
+                        </div>
+                    </div>
+
+                    <!-- Port Profile -->
+                    <div class="form-group">
+                        <label class="form-label">Port Profile</label>
+                        <div class="profile-buttons">
+                            <button class="profile-btn" onclick="selectProfile('fast', this)">Fast (25)</button>
+                            <button class="profile-btn active" onclick="selectProfile('standard', this)">Standard (100)</button>
+                            <button class="profile-btn" onclick="selectProfile('extended', this)">Extended (1k)</button>
+                            <button class="profile-btn" onclick="selectProfile('custom', this)">Custom</button>
+                        </div>
+                    </div>
+
+                    <!-- Launch Button -->
+                    <button class="launch-btn" id="btn-launch-crawl" onclick="startScrawl()">
+                        <span>⚡ LAUNCH SCRAWLER</span>
+                    </button>
+                </div>
+
+                <!-- Custom Ports Field (hidden by default) -->
+                <div class="form-group" id="custom-ports-group" style="display: none; margin-top: 14px;">
+                    <label class="form-label">Custom Port Specification</label>
+                    <input type="text" id="custom-ports-input" class="input-text" placeholder="e.g. 80, 443, 8000-8080, 3000">
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="options-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="opt-crawl-web" checked>
+                        <span>Deep HTTP/HTTPS Web Scrawler</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="opt-deep-crawl">
+                        <span>Probe Sensitive Endpoints (/.env, /.git, /admin, /swagger)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="opt-multicast" checked>
+                        <span>Multicast SSDP / UPnP Discovery</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Active Scan Progress Box -->
+            <div class="progress-box" id="progress-box">
+                <div class="progress-header">
+                    <span class="progress-stage" id="progress-stage-text">Initializing...</span>
+                    <span class="progress-percent" id="progress-percent-text">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                </div>
+                <div class="terminal-feed" id="terminal-feed">Waiting for scrawler initialization...</div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Topology Graph -->
+        <div id="tab-content-topology" style="display: none;">
+            <div id="topology-container">
+                <div class="topology-overlay">
+                    <strong>Interactive Network Topology</strong> &bull; Drag to inspect &bull; Click node for deep inspection &bull; Scroll to zoom
+                </div>
+                <div id="vis-network" style="width: 100%; height: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Discovered Hosts -->
+        <div id="tab-content-hosts" style="display: none;">
+            <div class="table-card">
+                <div class="table-header">
+                    <div style="font-weight: 700; font-size: 16px;">Host Inventory</div>
+                    <input type="text" class="search-box" id="host-search-input" placeholder="Search IP, vendor, hostname..." oninput="filterHostsTable()">
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>MAC / Hardware Vendor</th>
+                            <th>Hostname / Identity</th>
+                            <th>Classification</th>
+                            <th>Latency</th>
+                            <th>Open Ports</th>
+                            <th>Risk Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hosts-table-body">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                                No hosts discovered yet. Launch a scrawl from the Radar tab!
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: Web Applications -->
+        <div id="tab-content-web" style="display: none;">
+            <div class="web-grid" id="web-grid">
+                <div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">
+                    No web applications crawled yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Security Audit -->
+        <div id="tab-content-security" style="display: none;">
+            <div class="table-card">
+                <div class="table-header">
+                    <div style="font-weight: 700; font-size: 16px;">Vulnerability Findings & Audit Checklist</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Target Host</th>
+                            <th>Severity</th>
+                            <th>Finding</th>
+                            <th>Remediation Advice</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vuln-table-body">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                                No security anomalies recorded.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 6: Export & Reports -->
+        <div id="tab-content-export" style="display: none;">
+            <div class="export-grid">
+                <div class="export-card">
+                    <div style="font-size: 36px; margin-bottom: 10px;">📄</div>
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Standalone HTML Report</div>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Portable self-contained interactive audit report with styled tables and charts.</p>
+                    <button class="export-btn" onclick="exportData('html')">Download HTML Report</button>
+                </div>
+                <div class="export-card">
+                    <div style="font-size: 36px; margin-bottom: 10px;">📊</div>
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">JSON Data Export</div>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Complete machine-readable JSON object containing topology, hosts, and certificates.</p>
+                    <button class="export-btn" onclick="exportData('json')">Download JSON</button>
+                </div>
+                <div class="export-card">
+                    <div style="font-size: 36px; margin-bottom: 10px;">📑</div>
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">CSV Spreadsheet</div>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Tabular export of all hosts, MAC addresses, vendors, and open ports.</p>
+                    <button class="export-btn" onclick="exportData('csv')">Download CSV</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Host Detail Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+    <div class="drawer" id="host-drawer">
+        <div class="drawer-header">
+            <div>
+                <h3 id="drawer-title" style="font-size: 20px; color: var(--accent-cyan);">Host Details</h3>
+                <span id="drawer-subtitle" style="font-size: 13px; color: var(--text-secondary);">Inspection view</span>
+            </div>
+            <button class="close-btn" onclick="closeDrawer()">&times;</button>
+        </div>
+        <div id="drawer-body">
+            <!-- Populated on node/row click -->
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let selectedProfile = "standard";
+        let activeScanReport = null;
+        let wsConnection = null;
+        let visNetworkInstance = null;
+        let allHostsData = [];
+
+        // Initialize on page load
+        window.addEventListener("DOMContentLoaded", () => {
+            fetchInterfaces();
+            connectWebSocket();
+            fetchLastReport();
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick").includes(tabId));
+            if (targetBtn) targetBtn.classList.add("active");
+
+            ["radar", "topology", "hosts", "web", "security", "export"].forEach(id => {
+                const el = document.getElementById(`tab-content-${id}`);
+                if (el) el.style.display = (id === tabId) ? "block" : "none";
+            });
+
+            if (tabId === "topology" && activeScanReport && activeScanReport.topology) {
+                setTimeout(renderTopology, 100);
+            }
+        }
+
+        // Profile Selection
+        function selectProfile(profile, btn) {
+            selectedProfile = profile;
+            document.querySelectorAll(".profile-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            document.getElementById("custom-ports-group").style.display = (profile === "custom") ? "flex" : "none";
+        }
+
+        // Fetch Interfaces & Default Gateway
+        async function fetchInterfaces() {
+            try {
+                const res = await fetch("/api/interfaces");
+                const data = await res.json();
+                const container = document.getElementById("quick-targets-container");
+                container.innerHTML = "";
+
+                if (data.interfaces && data.interfaces.length > 0) {
+                    data.interfaces.forEach((iface, idx) => {
+                        const chip = document.createElement("div");
+                        chip.className = "target-chip";
+                        chip.textContent = `${iface.name} (${iface.cidr})`;
+                        chip.onclick = () => {
+                            document.getElementById("target-input").value = iface.cidr;
+                        };
+                        container.appendChild(chip);
+                        if (idx === 0 && !document.getElementById("target-input").value) {
+                            document.getElementById("target-input").value = iface.cidr;
+                        }
+                    });
+                }
+
+                // Add localhost chip
+                const localChip = document.createElement("div");
+                localChip.className = "target-chip";
+                localChip.textContent = "Localhost (127.0.0.1)";
+                localChip.onclick = () => {
+                    document.getElementById("target-input").value = "127.0.0.1";
+                };
+                container.appendChild(localChip);
+
+                if (data.gateway) {
+                    document.getElementById("detected-gateway-info").textContent = `Default Gateway: ${data.gateway}`;
+                }
+            } catch (e) {
+                console.error("Failed to fetch interfaces", e);
+            }
+        }
+
+        // WebSocket Connection for Live Progress
+        function connectWebSocket() {
+            const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${proto}//${window.location.host}/ws/scan`;
+
+            wsConnection = new WebSocket(wsUrl);
+
+            wsConnection.onopen = () => {
+                console.log("WebSocket connected to Network Slinger engine");
+            };
+
+            wsConnection.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === "progress") {
+                        handleProgressUpdate(msg.data);
+                    } else if (msg.type === "complete") {
+                        handleScanComplete(msg.data);
+                    } else if (msg.type === "log") {
+                        appendTerminalLog(msg.message);
+                    }
+                } catch (e) {
+                    console.error("WS parse error", e);
+                }
+            };
+
+            wsConnection.onclose = () => {
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Start Crawl Action
+        async function startScrawl() {
+            const target = document.getElementById("target-input").value.trim();
+            const crawlWeb = document.getElementById("opt-crawl-web").checked;
+            const deepCrawl = document.getElementById("opt-deep-crawl").checked;
+            const multicast = document.getElementById("opt-multicast").checked;
+            const customPorts = document.getElementById("custom-ports-input").value.trim();
+
+            const payload = {
+                targets: target ? [target] : [],
+                port_profile: selectedProfile,
+                custom_ports: customPorts,
+                crawl_web: crawlWeb,
+                deep_web_crawl: deepCrawl,
+                enable_multicast: multicast,
+                concurrency: 150,
+                timeout: 1.0
+            };
+
+            // UI updates
+            document.getElementById("btn-launch-crawl").disabled = true;
+            document.getElementById("progress-box").style.display = "block";
+            document.getElementById("live-dot").classList.add("scanning");
+            document.getElementById("live-status").textContent = "SCRAWLING ACTIVE";
+            document.getElementById("terminal-feed").textContent = "[*] Dispatching asynchronous scrawler...\n";
+
+            try {
+                const res = await fetch("/api/scan", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                console.log("Scan started:", data);
+            } catch (e) {
+                alert("Failed to start scan: " + e.message);
+                document.getElementById("btn-launch-crawl").disabled = false;
+                document.getElementById("live-dot").classList.remove("scanning");
+            }
+        }
+
+        function handleProgressUpdate(prog) {
+            document.getElementById("progress-stage-text").textContent = `${prog.stage}: ${prog.message}`;
+            document.getElementById("progress-percent-text").textContent = `${Math.round(prog.percent)}%`;
+            document.getElementById("progress-bar-fill").style.width = `${prog.percent}%`;
+            appendTerminalLog(`[${prog.stage}] ${prog.message}`);
+        }
+
+        function handleScanComplete(report) {
+            activeScanReport = report;
+            allHostsData = report.hosts || [];
+
+            document.getElementById("btn-launch-crawl").disabled = false;
+            document.getElementById("live-dot").classList.remove("scanning");
+            document.getElementById("live-status").textContent = "SCRAWL FINISHED";
+            document.getElementById("progress-bar-fill").style.width = "100%";
+            document.getElementById("progress-percent-text").textContent = "100%";
+            document.getElementById("progress-stage-text").textContent = `Complete (${report.duration_seconds}s)`;
+
+            appendTerminalLog(`[✓] Scrawl finished! Found ${report.summary.live_hosts_found} live hosts.`);
+
+            updateStatsCards(report.summary);
+            renderHostsTable(report.hosts);
+            renderWebGrid(report.hosts);
+            renderVulnTable(report.hosts);
+        }
+
+        function appendTerminalLog(msg) {
+            const feed = document.getElementById("terminal-feed");
+            const time = new Date().toLocaleTimeString();
+            feed.textContent += `[${time}] ${msg}\n`;
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function updateStatsCards(summary) {
+            document.getElementById("stat-hosts").textContent = summary.live_hosts_found;
+            document.getElementById("stat-ports").textContent = summary.total_open_ports;
+            document.getElementById("stat-web").textContent = summary.total_web_services;
+            document.getElementById("stat-risks").textContent = summary.critical_risks + summary.high_risks;
+
+            document.getElementById("tab-host-count").textContent = summary.live_hosts_found;
+            document.getElementById("tab-web-count").textContent = summary.total_web_services;
+            document.getElementById("tab-vuln-count").textContent = summary.critical_risks + summary.high_risks + summary.medium_risks;
+        }
+
+        // Render Hosts Table
+        function renderHostsTable(hosts) {
+            const tbody = document.getElementById("hosts-table-body");
+            if (!hosts || hosts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">No hosts found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = hosts.map((h, idx) => {
+                const portsBadges = h.open_ports.slice(0, 4).map(p => `<span class="port-pill">${p.port}/${p.service}</span>`).join(" ");
+                const morePorts = h.open_ports.length > 4 ? `<span style="font-size: 11px; color: var(--text-dim);">+${h.open_ports.length - 4}</span>` : "";
+
+                let riskClass = "badge-info";
+                if (h.risk_level === "CRITICAL") riskClass = "badge-critical";
+                else if (h.risk_level === "HIGH") riskClass = "badge-high";
+                else if (h.risk_level === "MEDIUM") riskClass = "badge-medium";
+                else if (h.risk_level === "LOW") riskClass = "badge-low";
+
+                return `
+                    <tr>
+                        <td><strong style="color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;">${h.ip}</strong></td>
+                        <td>
+                            <div>${h.mac_address || '<span style="color: var(--text-dim);">N/A</span>'}</div>
+                            <small style="color: var(--text-secondary);">${h.vendor}</small>
+                        </td>
+                        <td>${h.hostname || (h.ssdp_info ? h.ssdp_info.friendly_name : '') || '<span style="color: var(--text-dim);">-</span>'}</td>
+                        <td><span class="badge badge-info">${h.device_type}</span></td>
+                        <td style="font-family: 'JetBrains Mono', monospace;">${h.latency_ms} ms</td>
+                        <td>${portsBadges || '<span style="color: var(--text-dim);">None</span>'} ${morePorts}</td>
+                        <td><span class="badge ${riskClass}">${h.risk_score} (${h.risk_level})</span></td>
+                        <td>
+                            <button onclick="openDrawer(${idx})" style="background: var(--bg-elevated); border: 1px solid var(--border-glow); color: var(--accent-cyan); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;">Inspect</button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // Render Web Services Grid
+        function renderWebGrid(hosts) {
+            const grid = document.getElementById("web-grid");
+            const webList = [];
+            hosts.forEach(h => {
+                h.web_services.forEach(w => webList.push({ host: h, web: w }));
+            });
+
+            if (webList.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">No web applications crawled yet.</div>`;
+                return;
+            }
+
+            grid.innerHTML = webList.map(item => {
+                const w = item.web;
+                const techTags = w.tech_stack.map(t => `<span class="tech-tag">${t}</span>`).join(" ");
+
+                let sslBadge = `<span class="badge badge-info">No SSL</span>`;
+                if (w.ssl_info) {
+                    if (w.ssl_info.is_expired) sslBadge = `<span class="badge badge-critical">SSL EXPIRED</span>`;
+                    else sslBadge = `<span class="badge badge-low">SSL Valid (${w.ssl_info.days_left}d)</span>`;
+                }
+
+                let endpointsHtml = "";
+                if (w.discovered_endpoints && w.discovered_endpoints.length > 0) {
+                    endpointsHtml = `<div style="margin-top: 10px; border-top: 1px solid var(--border-dim); padding-top: 8px;">
+                        <small style="color: var(--text-secondary); font-weight: 700;">Discovered Paths:</small>
+                        <div style="margin-top: 4px;">
+                            ${w.discovered_endpoints.map(e => `<div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${e.is_sensitive ? 'var(--accent-orange)' : 'var(--accent-cyan)'};">${e.status_code} ${e.url}</div>`).join("")}
+                        </div>
+                    </div>`;
+                }
+
+                return `
+                    <div class="web-card">
+                        <div class="web-card-top">
+                            <a href="${w.url}" target="_blank" class="web-url">${w.url}</a>
+                            <span class="badge badge-info">${w.status_code}</span>
+                        </div>
+                        <div class="web-title">${w.title || 'Untitled Web Application'}</div>
+                        <div class="web-server">${w.server ? `Server: <code>${w.server}</code>` : 'Server: Unknown'} &bull; ${sslBadge}</div>
+                        <div>${techTags || '<span style="color: var(--text-dim); font-size: 12px;">No specific tech detected</span>'}</div>
+                        ${endpointsHtml}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // Render Security Findings
+        function renderVulnTable(hosts) {
+            const tbody = document.getElementById("vuln-table-body");
+            const findings = [];
+            hosts.forEach(h => {
+                h.security_findings.forEach(f => findings.push({ host: h, finding: f }));
+            });
+
+            if (findings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--accent-green); padding: 30px;">✓ No security anomalies or exposures detected!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = findings.map(item => {
+                const f = item.finding;
+                let sevClass = "badge-info";
+                if (f.severity === "CRITICAL") sevClass = "badge-critical";
+                else if (f.severity === "HIGH") sevClass = "badge-high";
+                else if (f.severity === "MEDIUM") sevClass = "badge-medium";
+                else if (f.severity === "LOW") sevClass = "badge-low";
+
+                return `
+                    <tr>
+                        <td><strong style="color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;">${item.host.ip}</strong></td>
+                        <td><span class="badge ${sevClass}">${f.severity}</span></td>
+                        <td>
+                            <strong style="color: var(--text-primary);">${f.title}</strong>
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">${f.description}</div>
+                        </td>
+                        <td style="color: var(--accent-green); font-size: 13px;">${f.remediation}</td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // Render Vis.js Topology Graph
+        function renderTopology() {
+            if (!activeScanReport || !activeScanReport.topology) return;
+            const container = document.getElementById("vis-network");
+
+            const nodesArray = activeScanReport.topology.nodes.map(n => {
+                let color = "#00f3ff";
+                let shape = "dot";
+                let size = 20;
+
+                if (n.group === "gateway") {
+                    color = "#ffd000";
+                    size = 35;
+                } else if (n.group.includes("server")) {
+                    color = "#00ffa3";
+                    size = 25;
+                } else if (n.group.includes("iot")) {
+                    color = "#9d4edd";
+                    size = 22;
+                } else if (n.group === "service_web") {
+                    color = "#ff7b00";
+                    size = 14;
+                    shape = "diamond";
+                }
+
+                if (n.risk_level === "CRITICAL" || n.risk_level === "HIGH") {
+                    color = "#ff2a55";
+                }
+
+                return {
+                    id: n.id,
+                    label: n.label,
+                    color: { background: color, border: "#ffffff", highlight: { background: "#ffffff", border: color } },
+                    shape: shape,
+                    size: size,
+                    font: { color: "#ffffff", size: 12, face: "Outfit" },
+                    rawNode: n
+                };
+            });
+
+            const edgesArray = activeScanReport.topology.edges.map(e => ({
+                from: e.source,
+                to: e.target,
+                label: e.label,
+                color: { color: "#24324a", highlight: "#00f3ff" },
+                font: { color: "#94a3b8", size: 10 }
+            }));
+
+            const data = {
+                nodes: new vis.DataSet(nodesArray),
+                edges: new vis.DataSet(edgesArray)
+            };
+
+            const options = {
+                physics: {
+                    barnesHut: { gravitationalConstant: -3500, centralGravity: 0.3, springLength: 95, springConstant: 0.04 },
+                    stabilization: { iterations: 100 }
+                },
+                interaction: { hover: true, tooltipDelay: 200 }
+            };
+
+            visNetworkInstance = new vis.Network(container, data, options);
+
+            visNetworkInstance.on("click", (params) => {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const foundNode = activeScanReport.topology.nodes.find(n => n.id === nodeId);
+                    if (foundNode && foundNode.ip) {
+                        const hostIdx = allHostsData.findIndex(h => h.ip === foundNode.ip);
+                        if (hostIdx !== -1) openDrawer(hostIdx);
+                    }
+                }
+            });
+        }
+
+        // Host Inspector Drawer
+        function openDrawer(idx) {
+            const h = allHostsData[idx];
+            if (!h) return;
+
+            document.getElementById("drawer-title").textContent = h.ip;
+            document.getElementById("drawer-subtitle").textContent = `${h.vendor} &bull; ${h.device_type}`;
+
+            let portsHtml = h.open_ports.map(p => `
+                <div style="background: var(--bg-base); border: 1px solid var(--border-dim); border-radius: 8px; padding: 10px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong style="color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;">Port ${p.port} (${p.service})</strong>
+                        <span class="badge ${p.risk_level === 'CRITICAL' ? 'badge-critical' : 'badge-info'}">${p.risk_level}</span>
+                    </div>
+                    ${p.banner ? `<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-green); margin-top: 6px; word-break: break-all;">${p.banner}</div>` : ''}
+                    ${p.risk_reason ? `<div style="font-size: 12px; color: var(--accent-orange); margin-top: 4px;">⚠ ${p.risk_reason}</div>` : ''}
+                </div>
+            `).join("");
+
+            let findingsHtml = h.security_findings.map(f => `
+                <div style="background: rgba(255, 42, 85, 0.08); border: 1px solid var(--accent-red); border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                    <strong style="color: var(--accent-red);">${f.title}</strong>
+                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${f.description}</p>
+                    <p style="font-size: 12px; color: var(--accent-green); margin-top: 4px;"><strong>Fix:</strong> ${f.remediation}</p>
+                </div>
+            `).join("");
+
+            document.getElementById("drawer-body").innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                        <div><span style="color: var(--text-secondary);">MAC Address:</span><br><strong>${h.mac_address || 'N/A'}</strong></div>
+                        <div><span style="color: var(--text-secondary);">Hardware Vendor:</span><br><strong>${h.vendor}</strong></div>
+                        <div><span style="color: var(--text-secondary);">Hostname:</span><br><strong>${h.hostname || 'N/A'}</strong></div>
+                        <div><span style="color: var(--text-secondary);">Latency:</span><br><strong>${h.latency_ms} ms</strong></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="font-size: 14px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;">Security Findings (${h.security_findings.length})</h4>
+                    ${findingsHtml || '<p style="color: var(--accent-green); font-size: 13px;">✓ No risk findings for this host.</p>'}
+                </div>
+
+                <div>
+                    <h4 style="font-size: 14px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 10px;">Open Services & Banners (${h.open_ports.length})</h4>
+                    ${portsHtml || '<p style="color: var(--text-dim); font-size: 13px;">No open ports identified.</p>'}
+                </div>
+            `;
+
+            document.getElementById("drawer-overlay").classList.add("open");
+            document.getElementById("host-drawer").classList.add("open");
+        }
+
+        function closeDrawer() {
+            document.getElementById("drawer-overlay").classList.remove("open");
+            document.getElementById("host-drawer").classList.remove("open");
+        }
+
+        // Export Data Trigger
+        function exportData(fmt) {
+            if (!activeScanReport) {
+                alert("Please run a scrawl first before exporting.");
+                return;
+            }
+            window.open(`/api/export/${activeScanReport.scan_id}?format=${fmt}`, "_blank");
+        }
+
+        // Fetch Last Report on Reload
+        async function fetchLastReport() {
+            try {
+                const res = await fetch("/api/scan/active");
+                const data = await res.json();
+                if (data && data.hosts) {
+                    handleScanComplete(data);
+                }
+            } catch (e) {
+                // No prior scan
+            }
+        }
+
+        // Search Filter for Hosts Table
+        function filterHostsTable() {
+            const query = document.getElementById("host-search-input").value.toLowerCase();
+            const filtered = allHostsData.filter(h =>
+                h.ip.toLowerCase().includes(query) ||
+                (h.vendor && h.vendor.toLowerCase().includes(query)) ||
+                (h.hostname && h.hostname.toLowerCase().includes(query)) ||
+                h.device_type.toLowerCase().includes(query)
+            );
+            renderHostsTable(filtered);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+[console_scripts]
+networkslinger = networkslinger.cli:main
+slinger = networkslinger.cli:main
