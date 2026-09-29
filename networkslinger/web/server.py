@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime
 import json
 import os
+import sys
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -38,8 +39,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static assets for 100% offline local operation
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+def get_web_dir() -> str:
+    """Resolves web assets directory in development and PyInstaller bundled environments."""
+    base_dirs = [os.path.dirname(os.path.abspath(__file__))]
+    if getattr(sys, "frozen", False):
+        if hasattr(sys, "_MEIPASS"):
+            base_dirs.insert(0, sys._MEIPASS)
+            base_dirs.insert(0, os.path.join(sys._MEIPASS, "_internal"))
+        if hasattr(sys, "executable"):
+            exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+            base_dirs.append(exe_dir)
+            base_dirs.append(os.path.join(exe_dir, "_internal"))
+
+    for base in base_dirs:
+        for sub in ["networkslinger/web", "web", ""]:
+            cand = os.path.normpath(os.path.join(base, sub))
+            if os.path.exists(os.path.join(cand, "templates", "index.html")):
+                return cand
+    return os.path.dirname(os.path.abspath(__file__))
+
+WEB_DIR = get_web_dir()
+STATIC_DIR = os.path.join(WEB_DIR, "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -78,7 +98,7 @@ manager = ConnectionManager()
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     """Serves the primary Single Page Application."""
-    template_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
+    template_path = os.path.join(WEB_DIR, "templates", "index.html")
     if os.path.exists(template_path):
         with open(template_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())

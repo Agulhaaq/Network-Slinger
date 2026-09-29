@@ -10,6 +10,17 @@ Execute directly:
 import os
 import sys
 
+class _DummyStream:
+    def write(self, *args, **kwargs):
+        pass
+    def flush(self, *args, **kwargs):
+        pass
+
+if sys.stdout is None:
+    sys.stdout = _DummyStream()
+if sys.stderr is None:
+    sys.stderr = _DummyStream()
+
 if sys.platform == "win32":
     try:
         if hasattr(sys.stdout, "reconfigure"):

@@ -66,35 +66,46 @@ It features both a **Rich Terminal CLI** with live streaming progress bars and f
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Installation
 
-### Installation
+### 1. Windows Application Installation (Full Setup)
 
-Clone the repository and install dependencies:
+Network Slinger compiles and installs as a standalone native Windows desktop application with Windows Start Menu integration and Programs registration.
+
+**Option A: Double-Click Setup**
+Double-click:
 ```powershell
-git clone https://github.com/Agulhaaq/Network-Slinger.git
-cd "Network-Slinger"
+Setup.bat
+```
+
+**Option B: PowerShell Installer**
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+* **Installed Path**: `%LOCALAPPDATA%\Programs\NetworkSlinger\NetworkSlinger.exe`
+* **Start Menu**: Available in the Windows Start Menu as **Network Slinger**.
+* **Windows Settings**: Registered under Windows Settings > Apps with an uninstaller.
+
+---
+
+### 2. Build Standalone Executable from Source
+
+You can build the binary distribution anytime using PyInstaller:
+```powershell
+pyinstaller NetworkSlinger.spec --noconfirm
+```
+The standalone binary and local assets will be output to `dist\NetworkSlinger\NetworkSlinger.exe`.
+
+---
+
+### 3. Developer / Python Execution
+
+If running directly from source code:
+```powershell
 python -m pip install -e .
+python run.py
 ```
-
-### Launch Single-Instance Desktop Application
-
-**Option A: Windows Batch Launcher**
-Simply double-click:
-```powershell
-NetworkSlinger.bat
-```
-
-**Option B: Python CLI Desktop Window**
-```powershell
-python run.py app
-```
-
-**Option C: Local Web Console**
-```powershell
-python run.py web
-```
-*(If an instance is already running, launching it again automatically focuses the active window or tab).*
 
 ---
 
