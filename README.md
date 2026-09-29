@@ -53,10 +53,10 @@ It features both a **Rich Terminal CLI** with live streaming progress bars and f
   - **Medium**: Self-signed SSL certificates, exposed admin panels, unencrypted databases on public interfaces.
   - **Low**: Missing HSTS or Clickjacking headers, SSL certificates expiring soon.
 
-### 6. 🕸️ Interactive Force-Directed Topology Graph & Web Dashboard
-- Modern dark cyberpunk UI with live WebSocket feed.
-- Nodes colored by device classification (Router/Gateway, Server, Workstation, IoT, Printer, Web Service) and risk severity.
-- Physics-based simulation: click any node to slide open a deep inspection drawer showing MAC, vendor, ports, banners, and vulnerabilities.
+### 6. 🕸️ Interactive Topology Graph & High-Contrast Neo-Minimalist Dashboard
+- High-contrast monochrome Swiss neo-minimalist web console with live WebSocket feed.
+- Radial tick-dial latency gauges, tactile pill switches, and clean device capsule cards.
+- Force-directed network topology diagram: click any node to slide open a deep inspection drawer showing MAC, vendor, ports, banners, and vulnerabilities.
 - One-click export to **Standalone Portable HTML Report**, **JSON**, or **CSV**.
 
 ---
