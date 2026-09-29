@@ -141,33 +141,39 @@ def focus_existing_window() -> bool:
 def run_one_time_instance(host: str = "127.0.0.1", port: int = 8000, native_window: bool = True):
     """
     Main entrypoint for single-instance launch.
-    - If already running: focuses window or opens active browser instance and exits cleanly.
-    - If not running: acquires single-instance lock, launches server, and opens native window or browser.
+    - If already running and server is alive: focuses window or opens active browser instance and exits cleanly.
+    - If not running or lock is stale: acquires lock, launches server, and opens native window or browser.
     """
     lock = SingleInstanceLock()
-    target_url = f"http://{host}:{port}"
+    active_host = host
+    active_port = port
 
-    # Check if another instance is already holding the lock
-    if not lock.acquire():
-        # Read the active port if available
-        if os.path.exists(PORT_FILE):
-            try:
-                with open(PORT_FILE, "r") as f:
-                    content = f.read().strip()
-                if content:
-                    target_url = f"http://{content}"
-            except Exception:
-                pass
+    # Read the active port if recorded previously
+    if os.path.exists(PORT_FILE):
+        try:
+            with open(PORT_FILE, "r") as f:
+                content = f.read().strip()
+            if ":" in content:
+                active_host, p_str = content.split(":", 1)
+                active_port = int(p_str)
+        except Exception:
+            pass
 
-        print(f"[INFO] Network Slinger instance is already running.")
+    # Check if another instance holds the lock AND the server is actually responding
+    locked = not lock.acquire()
+    server_alive = is_port_in_use(active_port, active_host)
+
+    if locked and server_alive:
+        target_url = f"http://{active_host}:{active_port}"
+        print(f"[INFO] Network Slinger instance is already active at {target_url}.", flush=True)
         if native_window and focus_existing_window():
-            print(f"[INFO] Restored and focused active desktop window.")
+            print(f"[INFO] Restored and focused active desktop window.", flush=True)
         else:
-            print(f"[INFO] Opening active instance in browser: {target_url}")
+            print(f"[INFO] Opening active instance in browser: {target_url}", flush=True)
             webbrowser.open(target_url)
         sys.exit(0)
 
-    # If the requested port is occupied by another application, find next free port
+    # If the default port is occupied by another non-Network-Slinger service, find next free port
     original_port = port
     while is_port_in_use(port, host) and port < original_port + 20:
         port += 1
@@ -180,23 +186,28 @@ def run_one_time_instance(host: str = "127.0.0.1", port: int = 8000, native_wind
     except Exception:
         pass
 
-    # Start FastAPI server in a background daemon thread
+    # Start FastAPI server in a background daemon thread using uvicorn.Server
     from .web.server import app
     import uvicorn
 
-    server_thread = threading.Thread(
-        target=lambda: uvicorn.run(app, host=host, port=port, log_level="warning"),
-        daemon=True
+    config = uvicorn.Config(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        access_log=False
     )
+    server = uvicorn.Server(config)
+    server_thread = threading.Thread(target=server.run, daemon=True)
     server_thread.start()
 
     # Wait for server to bind
-    for _ in range(30):
+    for _ in range(40):
         if is_port_in_use(port, host):
             break
         time.sleep(0.1)
 
-    print(f"[+] Network Slinger single-instance running at: {target_url}")
+    print(f"[+] Network Slinger local desktop application active at: {target_url}", flush=True)
 
     # Launch native desktop window via pywebview if requested and available
     if native_window:
@@ -218,7 +229,7 @@ def run_one_time_instance(host: str = "127.0.0.1", port: int = 8000, native_wind
             sys.exit(0)
         except Exception as e:
             # Fallback to default system browser
-            print(f"[INFO] Native window unavailable ({e}). Launching in browser.")
+            print(f"[INFO] Native window fallback to browser: {e}", flush=True)
 
     # Fallback to browser
     webbrowser.open(target_url)
@@ -226,5 +237,6 @@ def run_one_time_instance(host: str = "127.0.0.1", port: int = 8000, native_wind
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[INFO] Shutting down Network Slinger instance.")
+        print("\n[INFO] Shutting down Network Slinger instance.", flush=True)
+        server.should_exit = True
         lock.release()
