@@ -38,6 +38,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static assets for 100% offline local operation
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 # Active scan state and websocket client management
 active_report: Optional[ScanReport] = None
 active_crawler: Optional[NetworkSlingerCrawler] = None
@@ -220,7 +225,7 @@ def launch_web_server(host: str = "127.0.0.1", port: int = 8000):
     from rich.console import Console
     console = Console()
 
-    console.print(f"\n[bold green]⚡ Network Slinger Web Console running at:[/bold green] [bold cyan]http://{host}:{port}[/bold cyan]")
+    console.print(f"\n[bold green][+] Network Slinger Web Console running at:[/bold green] [bold cyan]http://{host}:{port}[/bold cyan]")
     console.print("[dim]Press Ctrl+C to stop the server[/dim]\n")
 
     uvicorn.run(app, host=host, port=port, log_level="info")

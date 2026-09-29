@@ -19,9 +19,7 @@ def generate_html_report(report: ScanReport) -> str:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NETWORK SLINGER -- AUDIT REPORT {report.scan_id}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- 100% Fully Local Offline Report (Zero External Dependencies) -->
     <style>
         :root {{
             --bg: #000000;
@@ -31,8 +29,8 @@ def generate_html_report(report: ScanReport) -> str:
             --border: #222222;
             --text-high: #ffffff;
             --text-muted: #777777;
-            --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-mono: "Cascadia Code", "Consolas", "SFMono-Regular", "JetBrains Mono", monospace;
         }}
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{

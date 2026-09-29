@@ -296,10 +296,18 @@ def main():
     # Command: discover
     subparsers.add_parser("discover", help="Quick host discovery on local subnet")
 
+    # Command: app / gui (Native Desktop App)
+    app_p = subparsers.add_parser("app", aliases=["gui"], help="Launch single-instance native desktop GUI window")
+    app_p.add_argument("--host", type=str, default="127.0.0.1", help="Host (default 127.0.0.1)")
+    app_p.add_argument("--port", type=int, default=8000, help="Port (default 8000)")
+    app_p.add_argument("--browser", action="store_true", help="Launch in default browser instead of native window")
+
     # Command: web
-    web_p = subparsers.add_parser("web", help="Launch the interactive Web Dashboard GUI")
+    web_p = subparsers.add_parser("web", help="Launch the Web Dashboard (single-instance)")
     web_p.add_argument("--host", type=str, default="127.0.0.1", help="Web console host (default 127.0.0.1)")
     web_p.add_argument("--port", type=int, default=8000, help="Web console port (default 8000)")
+    web_p.add_argument("--native", action="store_true", help="Launch in native desktop window")
+    web_p.add_argument("--server-only", action="store_true", help="Run Uvicorn server in foreground without browser/window")
 
     # Command: ifaces
     subparsers.add_parser("ifaces", help="List detected network interfaces and gateway")
@@ -324,13 +332,20 @@ def main():
         asyncio.run(run_cli_crawl(args))
     elif args.command == "ifaces":
         display_interfaces()
+    elif args.command in ("app", "gui"):
+        from .single_instance import run_one_time_instance
+        run_one_time_instance(host=args.host, port=args.port, native_window=not args.browser)
     elif args.command == "web":
-        from .web.server import launch_web_server
-        launch_web_server(host=args.host, port=args.port)
+        if getattr(args, "server_only", False):
+            from .web.server import launch_web_server
+            launch_web_server(host=args.host, port=args.port)
+        else:
+            from .single_instance import run_one_time_instance
+            run_one_time_instance(host=args.host, port=args.port, native_window=args.native)
     else:
         # Default: if no command passed, show interfaces and help
         display_interfaces()
-        console.print("\n[bold yellow]Tip:[/bold yellow] Run [bold cyan]python -m networkslinger crawl[/bold cyan] to scan local network, or [bold cyan]python -m networkslinger web[/bold cyan] to open the Web UI!\n")
+        console.print("\n[bold yellow]Tip:[/bold yellow] Run [bold cyan]python run.py app[/bold cyan] (native window) or [bold cyan]python run.py web[/bold cyan] to launch the single-instance console!\n")
 
 
 if __name__ == "__main__":

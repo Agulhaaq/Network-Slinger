@@ -53,11 +53,16 @@ It features both a **Rich Terminal CLI** with live streaming progress bars and f
   - **Medium**: Self-signed SSL certificates, exposed admin panels, unencrypted databases on public interfaces.
   - **Low**: Missing HSTS or Clickjacking headers, SSL certificates expiring soon.
 
-### 6. 🕸️ Interactive Topology Graph & High-Contrast Neo-Minimalist Dashboard
-- High-contrast monochrome Swiss neo-minimalist web console with live WebSocket feed.
-- Radial tick-dial latency gauges, tactile pill switches, and clean device capsule cards.
-- Force-directed network topology diagram: click any node to slide open a deep inspection drawer showing MAC, vendor, ports, banners, and vulnerabilities.
-- One-click export to **Standalone Portable HTML Report**, **JSON**, or **CSV**.
+### 6. 100% Fully Local & Offline Operation
+- **Zero External Dependencies / No CDNs**: All scripts, styling, and graphing libraries (`vis-network.min.js`) are locally vendored within the application package. Zero requests to external CDNs or Google Fonts.
+- **Embedded Offline Hardware Vendor Database**: Resolves MAC prefixes completely offline using local IEEE definitions.
+- **Self-Contained Offline Export Reports**: Exported HTML audit reports render completely offline without contacting external networks.
+
+### 7. Single-Instance Architecture & Native Desktop Window
+- **One-Time Instance Guarantee**: Enforced via Windows Named Mutex (`Global\NetworkSlinger_SingleInstance_App`) and cross-platform PID lockfiles.
+- **Automated Duplicate Prevention**: Launching a second time automatically brings the active window to the foreground or opens the active browser tab without port collisions or crashes.
+- **Native Desktop GUI**: Run as a native standalone window via `pywebview` (`python run.py app` or double-clicking `NetworkSlinger.bat`).
+- **High-Contrast Neo-Minimalist Dashboard**: Monochrome high-contrast design (black, white, quiet charcoal) inspired by Eline Ye with radial latency tick dials and physical pill switches.
 
 ---
 
@@ -67,10 +72,29 @@ It features both a **Rich Terminal CLI** with live streaming progress bars and f
 
 Clone the repository and install dependencies:
 ```powershell
-git clone https://github.com/your-username/network-slinger.git
-cd "Network Slinger"
+git clone https://github.com/Agulhaaq/Network-Slinger.git
+cd "Network-Slinger"
 python -m pip install -e .
 ```
+
+### Launch Single-Instance Desktop Application
+
+**Option A: Windows Batch Launcher**
+Simply double-click:
+```powershell
+NetworkSlinger.bat
+```
+
+**Option B: Python CLI Desktop Window**
+```powershell
+python run.py app
+```
+
+**Option C: Local Web Console**
+```powershell
+python run.py web
+```
+*(If an instance is already running, launching it again automatically focuses the active window or tab).*
 
 ---
 
