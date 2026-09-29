@@ -1,5 +1,11 @@
 @echo off
-:: Network Slinger Single-Instance Launcher
+:: Network Slinger - Single-Instance Local Desktop Application Launcher
 title Network Slinger
 cd /d "%~dp0"
-start "" python run.py app
+
+where pythonw >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    start "" pythonw run.py app
+) else (
+    start "" python run.py app
+)

@@ -8,3 +8,5 @@ test_report.json
 test_report.html
 .vscode/
 .idea/
+*.lock
+*active_port.txt

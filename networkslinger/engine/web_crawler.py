@@ -216,7 +216,7 @@ async def crawl_web_service(
         verify=False,
         follow_redirects=True,
         timeout=timeout,
-        headers={"User-Agent": "NetworkSlinger/1.0 (+https://github.com/networkslinger)"}
+        headers={"User-Agent": "NetworkSlinger/1.0 (Local Reconnaissance Auditor)"}
     ) as client:
         resp = None
         chosen_url = None

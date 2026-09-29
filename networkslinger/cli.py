@@ -343,9 +343,10 @@ def main():
             from .single_instance import run_one_time_instance
             run_one_time_instance(host=args.host, port=args.port, native_window=args.native)
     else:
-        # Default: if no command passed, show interfaces and help
-        display_interfaces()
-        console.print("\n[bold yellow]Tip:[/bold yellow] Run [bold cyan]python run.py app[/bold cyan] (native window) or [bold cyan]python run.py web[/bold cyan] to launch the single-instance console!\n")
+        # Default: launch the single-instance local desktop application
+        console.print("[bold green][+] Launching Network Slinger Local Desktop Application...[/bold green]")
+        from .single_instance import run_one_time_instance
+        run_one_time_instance(host="127.0.0.1", port=8000, native_window=True)
 
 
 if __name__ == "__main__":

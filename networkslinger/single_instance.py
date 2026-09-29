@@ -114,7 +114,7 @@ def focus_existing_window() -> bool:
                     if length > 0:
                         buffer = ctypes.create_unicode_buffer(length + 1)
                         user32.GetWindowTextW(hwnd, buffer, length + 1)
-                        if "Network Slinger" in buffer.value:
+                        if "network slinger" in buffer.value.lower():
                             found_hwnds.append(hwnd)
                             return False
                 return True
@@ -126,6 +126,12 @@ def focus_existing_window() -> bool:
                 hwnd = found_hwnds[0]
                 user32.ShowWindow(hwnd, 9)  # SW_RESTORE
                 user32.SetForegroundWindow(hwnd)
+                # Force window to top of z-order
+                HWND_TOP = 0
+                SWP_NOMOVE = 0x0002
+                SWP_NOSIZE = 0x0001
+                SWP_SHOWWINDOW = 0x0040
+                user32.SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW)
                 return True
         except Exception:
             pass
@@ -204,7 +210,10 @@ def run_one_time_instance(host: str = "127.0.0.1", port: int = 8000, native_wind
                 min_size=(960, 640),
                 background_color="#000000"
             )
-            webview.start()
+            try:
+                webview.start(gui="edgechromium", private_mode=True)
+            except Exception:
+                webview.start()
             lock.release()
             sys.exit(0)
         except Exception as e:
