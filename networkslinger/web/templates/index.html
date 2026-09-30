@@ -3,1020 +3,1668 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NETWORK SLINGER -- RECONNAISSANCE</title>
-    <!-- 100% Fully Local Offline Assets (Zero External CDN / Network Calls) -->
+    <title>NETWORK SLINGER</title>
+    <!-- 100% Fully Local — Zero External Network Calls -->
     <script src="/static/js/vis-network.min.js"></script>
     <style>
         :root {
-            --bg: #000000;
-            --surface: #0e0e0e;
-            --surface-elevated: #181818;
-            --card-light: #ffffff;
-            --card-light-text: #000000;
-            --card-dark: #121212;
-            --border-subtle: #242424;
-            --border-strong: #ffffff;
-            --text-high: #ffffff;
-            --text-muted: #888888;
-            --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            --font-mono: "Cascadia Code", "Consolas", "SFMono-Regular", "JetBrains Mono", monospace;
+            --bg:          #080808;
+            --surface:     #111111;
+            --surface-2:   #1a1a1a;
+            --border:      #272727;
+            --border-hi:   #3d3d3d;
+            --text:        #f0f0f0;
+            --text-2:      #999999;
+            --text-3:      #555555;
+            --white:       #ffffff;
+            --black:       #000000;
+            --accent:      #ffffff;
+            --sans:        -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            --mono:        "Cascadia Code", "Consolas", "JetBrains Mono", "SFMono-Regular", monospace;
+            --r:           8px;
+            --r-lg:        16px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { height: 100%; }
+
         body {
-            background-color: var(--bg);
-            color: var(--text-high);
-            font-family: var(--font-display);
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
             font-size: 13px;
-            line-height: 1.4;
-            min-height: 100vh;
+            line-height: 1.45;
+            height: 100%;
             display: flex;
             flex-direction: column;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Top Monochrome Header */
-        header {
-            background: #000000;
-            border-bottom: 1px solid var(--border-subtle);
-            padding: 18px 36px;
+        /* ─── TOPBAR ──────────────────────────────────────────── */
+        .topbar {
+            height: 48px;
+            background: var(--black);
+            border-bottom: 1px solid var(--border);
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            padding: 0 24px;
+            gap: 0;
+            flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
         }
-        .header-title-block {
+
+        .brand {
             display: flex;
             align-items: baseline;
-            gap: 12px;
+            gap: 10px;
+            margin-right: 40px;
         }
-        .brand-heading {
-            font-size: 16px;
+        .brand-name {
+            font-size: 13px;
             font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--white);
+        }
+        .brand-ver {
+            font-size: 10px;
+            font-weight: 700;
             letter-spacing: 1px;
+            color: var(--text-3);
             text-transform: uppercase;
         }
-        .brand-sub {
+
+        .topbar-nav {
+            display: flex;
+            align-items: stretch;
+            height: 100%;
+            flex: 1;
+        }
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
             font-size: 11px;
             font-weight: 700;
-            letter-spacing: 0.8px;
-            color: var(--text-muted);
+            letter-spacing: 1.2px;
             text-transform: uppercase;
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 6px;
-        }
-        .nav-pill-btn {
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-muted);
-            font-family: var(--font-display);
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 6px 14px;
-            border-radius: 20px;
+            color: var(--text-3);
             cursor: pointer;
-            transition: all 0.15s;
-        }
-        .nav-pill-btn:hover { color: #ffffff; }
-        .nav-pill-btn.active {
-            background: #ffffff;
-            color: #000000;
-        }
-
-        /* Hero Command Strip */
-        .hero-strip {
-            padding: 32px 36px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .hero-banner-title {
-            font-size: 26px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .hero-banner-title::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: var(--border-subtle);
-        }
-
-        /* Action Bar */
-        .action-bar {
-            display: grid;
-            grid-template-columns: 2fr 1fr auto;
-            gap: 14px;
-            align-items: center;
-        }
-        .input-capsule {
-            background: #ffffff;
-            color: #000000;
-            border-radius: 40px;
-            padding: 4px 6px 4px 22px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.05);
-        }
-        .target-field {
-            background: transparent;
-            border: none;
-            color: #000000;
-            font-family: var(--font-mono);
-            font-size: 14px;
-            font-weight: 700;
-            width: 100%;
-            outline: none;
-        }
-        .target-field::placeholder { color: #777777; font-weight: 500; }
-
-        .select-capsule {
-            background: #121212;
-            border: 1px solid var(--border-subtle);
-            color: #ffffff;
-            border-radius: 40px;
-            padding: 10px 20px;
-            font-family: var(--font-display);
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            outline: none;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .btn-black-pill {
-            background: #ffffff;
-            color: #000000;
-            border: none;
-            border-radius: 40px;
-            padding: 11px 28px;
-            font-family: var(--font-display);
-            font-size: 12px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 0.1s, background 0.15s;
+            border-bottom: 2px solid transparent;
+            transition: color 0.12s, border-color 0.12s;
+            user-select: none;
             white-space: nowrap;
         }
-        .btn-black-pill:hover {
-            background: #e2e2e2;
-            transform: scale(1.02);
+        .nav-tab:hover { color: var(--text); }
+        .nav-tab.active {
+            color: var(--white);
+            border-bottom-color: var(--white);
         }
-        .btn-black-pill:active { transform: scale(0.98); }
-        .btn-black-pill:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        /* Chunky Physical Toggles */
-        .toggles-shelf {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .shelf-toggle {
+        .topbar-right {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-left: auto;
+        }
+
+        /* Scan status indicator */
+        .scan-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+        .scan-badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-3);
+        }
+        .scan-badge.running .scan-badge-dot {
+            background: var(--white);
+            animation: pulse-dot 1s ease infinite;
+        }
+        .scan-badge.running { color: var(--text); }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ─── PROGRESS BAR ────────────────────────────────────── */
+        .progress-bar-wrap {
+            height: 2px;
+            background: var(--surface);
+            flex-shrink: 0;
+            display: none;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--white);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* ─── COMMAND STRIP ───────────────────────────────────── */
+        .cmd-strip {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        /* Target input */
+        .cmd-input-wrap {
+            flex: 1;
+            max-width: 440px;
+            position: relative;
+        }
+        .cmd-label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            pointer-events: none;
+        }
+        .cmd-input {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--white);
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 9px 12px 9px 56px;
+            outline: none;
+            transition: border-color 0.12s;
+        }
+        .cmd-input:focus { border-color: var(--border-hi); }
+        .cmd-input::placeholder { color: var(--text-3); }
+
+        /* Profile select */
+        .cmd-select {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 9px 14px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.12s;
+        }
+        .cmd-select:focus { border-color: var(--border-hi); }
+
+        /* Toggles */
+        .cmd-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
             user-select: none;
         }
-        .shelf-toggle-label {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.8px;
+        .toggle-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: var(--text-3);
+            transition: color 0.12s;
         }
-        .switch-track {
-            width: 44px;
-            height: 24px;
-            background: #1c1c1c;
-            border: 1px solid #333333;
-            border-radius: 14px;
+        .toggle-item.on .toggle-label { color: var(--text); }
+
+        .toggle-track {
+            width: 36px;
+            height: 20px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
             position: relative;
-            transition: background 0.2s;
+            transition: background 0.2s, border-color 0.2s;
         }
-        .switch-thumb {
-            width: 16px;
-            height: 16px;
-            background: #ffffff;
+        .toggle-thumb {
+            width: 12px;
+            height: 12px;
+            background: var(--text-3);
             border-radius: 50%;
             position: absolute;
             top: 3px;
-            left: 4px;
-            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            left: 3px;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1.2), background 0.2s;
         }
-        .shelf-toggle.active .switch-track {
-            background: #ffffff;
+        .toggle-item.on .toggle-track {
+            background: var(--white);
+            border-color: var(--white);
         }
-        .shelf-toggle.active .switch-thumb {
-            transform: translateX(20px);
-            background: #000000;
-        }
-        .shelf-toggle.active .shelf-toggle-label {
-            color: #ffffff;
+        .toggle-item.on .toggle-thumb {
+            background: var(--black);
+            transform: translateX(16px);
         }
 
-        /* Multi-Card Grid (Eline Ye style layout) */
-        .workspace-grid {
+        /* Buttons */
+        .btn {
+            font-family: var(--sans);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border: none;
+            border-radius: var(--r);
+            padding: 9px 18px;
+            cursor: pointer;
+            transition: opacity 0.12s, transform 0.08s;
+            white-space: nowrap;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+        .btn-primary {
+            background: var(--white);
+            color: var(--black);
+        }
+        .btn-primary:hover:not(:disabled) { background: #e8e8e8; }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-2);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover:not(:disabled) {
+            color: var(--text);
+            border-color: var(--border-hi);
+        }
+
+        /* ─── MAIN WORKSPACE ──────────────────────────────────── */
+        .workspace {
+            flex: 1;
             display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 24px;
-            padding: 0 36px 36px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        @media (max-width: 1024px) {
-            .workspace-grid { grid-template-columns: 1fr; }
+            grid-template-columns: 260px 1fr;
+            min-height: 0;
+            overflow: hidden;
         }
 
-        /* Left Column: Dial / Overview Cards */
-        .left-column {
+        /* ─── LEFT SIDEBAR ────────────────────────────────────── */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 0;
         }
 
-        /* Eline Ye High-Contrast White Card */
-        .white-card {
-            background: #ffffff;
-            color: #000000;
-            border-radius: 28px;
-            padding: 28px;
-            box-shadow: 0 16px 40px rgba(255, 255, 255, 0.04);
+        .sidebar-section {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 20px;
+        }
+
+        .sidebar-section-label {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 16px;
+        }
+
+        /* Gateway Latency Dial */
+        .dial-wrap {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dial-ring-svg {
+            width: 140px;
+            height: 140px;
+        }
+
+        .dial-center {
+            text-align: center;
+        }
+        .dial-val {
+            font-family: var(--mono);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+        .dial-unit {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+
+        /* Metric list */
+        .metric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .metric-item {
+            display: flex;
             justify-content: space-between;
+            align-items: baseline;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
         }
-        .card-tag-head {
+        .metric-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .metric-item:first-child { padding-top: 0; }
+        .metric-key {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+        .metric-val {
+            font-family: var(--mono);
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        /* Interface selector */
+        .iface-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .iface-item {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: border-color 0.12s;
+        }
+        .iface-item:hover { border-color: var(--border-hi); }
+        .iface-item.selected {
+            border-color: var(--white);
+            background: rgba(255,255,255,0.04);
+        }
+        .iface-name {
+            font-family: var(--mono);
             font-size: 12px;
-            font-weight: 900;
+            font-weight: 700;
+            color: var(--white);
+        }
+        .iface-cidr {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-3);
+            margin-top: 2px;
+        }
+
+        /* ─── MAIN CONTENT PANE ───────────────────────────────── */
+        .content {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+        .view.active { display: flex; }
+
+        /* ─── INVENTORY TABLE ─────────────────────────────────── */
+        .table-wrap {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            z-index: 10;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 9px;
+            font-weight: 800;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            margin-bottom: 20px;
+            color: var(--text-3);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
         }
-        .dial-container {
+        th:hover { color: var(--text-2); }
+        th .sort-arrow {
+            margin-left: 4px;
+            opacity: 0;
+            font-size: 8px;
+        }
+        th.sorted .sort-arrow { opacity: 1; }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.08s;
+        }
+        tbody tr:hover { background: var(--surface); }
+        tbody tr:last-child { border-bottom: none; }
+
+        td {
+            padding: 13px 16px;
+            vertical-align: middle;
+        }
+
+        .td-ip {
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .td-mac {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-2);
+        }
+
+        .td-vendor {
+            font-size: 12px;
+            color: var(--text-2);
+            max-width: 160px;
+        }
+
+        .type-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px solid var(--border-hi);
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-2);
+            white-space: nowrap;
+        }
+        .type-tag.gateway { border-color: var(--white); color: var(--white); }
+        .type-tag.server { border-color: #aaa; color: #aaa; }
+
+        .port-chips {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .port-chip {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-2);
+            white-space: nowrap;
+        }
+        .port-chip.critical { border-color: #666; color: #ccc; }
+
+        .latency-val {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+        .risk-bar {
+            width: 32px;
+            height: 3px;
+            background: var(--surface-2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .risk-bar-fill {
+            height: 100%;
+            background: var(--white);
+            border-radius: 2px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            padding: 10px 0;
+            gap: 12px;
+            color: var(--text-3);
+            padding: 60px 24px;
         }
-        .radial-dial-svg {
-            width: 190px;
-            height: 190px;
-        }
-        .dial-center-val {
-            position: absolute;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .dial-num {
-            font-size: 44px;
-            font-weight: 900;
-            letter-spacing: -2px;
-            line-height: 0.9;
-        }
-        .dial-sub {
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: #666666;
-            margin-top: 6px;
-        }
-        .white-card-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 24px;
-        }
-        .btn-card-black {
-            background: #000000;
-            color: #ffffff;
-            border: none;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.15s;
-        }
-        .btn-card-black:hover { background: #222222; }
-
-        /* Dark Card Component */
-        .dark-card {
-            background: #101010;
-            border: 1px solid var(--border-subtle);
-            border-radius: 28px;
-            padding: 26px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .metrics-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-        .metric-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            border-bottom: 1px solid #1c1c1c;
-            padding-bottom: 10px;
-        }
-        .metric-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .metric-title {
+        .empty-state-title {
             font-size: 11px;
             font-weight: 800;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            color: var(--text-muted);
         }
-        .metric-huge-num {
-            font-family: var(--font-mono);
-            font-size: 20px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        /* Right Column: Host Inventory & Data */
-        .right-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        /* Device Pill Cards */
-        .device-capsule-card {
-            background: #ffffff;
-            color: #000000;
-            border-radius: 24px;
-            padding: 22px 26px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: transform 0.15s;
-            cursor: pointer;
-        }
-        .device-capsule-card:hover {
-            transform: translateY(-2px);
-        }
-        .device-info-left {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .device-title-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .device-ip {
-            font-family: var(--font-mono);
-            font-size: 16px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .device-type-tag {
-            font-size: 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            border: 1px solid #000000;
-            padding: 1px 8px;
-            border-radius: 20px;
-        }
-        .device-meta {
+        .empty-state-sub {
             font-size: 12px;
-            color: #555555;
-            font-weight: 600;
-        }
-        .device-ports-list {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-        .mono-chip-dark {
-            background: #000000;
-            color: #ffffff;
-            font-family: var(--font-mono);
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 6px;
-        }
-
-        .device-right-status {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 6px;
-        }
-        .device-latency {
-            font-family: var(--font-mono);
-            font-size: 14px;
-            font-weight: 800;
-        }
-        .btn-inspect-pill {
-            background: #000000;
-            color: #ffffff;
-            border: none;
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-inspect-pill:hover { background: #333333; }
-
-        /* Progress Bar */
-        .progress-line-wrap {
-            height: 2px;
-            background: #1a1a1a;
-            width: 100%;
-            display: none;
-            position: relative;
-        }
-        .progress-line-fill {
-            height: 100%;
-            background: #ffffff;
-            width: 0%;
-            transition: width 0.25s ease;
-        }
-
-        /* Slide-over Inspection Drawer */
-        .drawer-backdrop {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 100;
-            display: none;
-        }
-        .drawer-backdrop.active { display: block; }
-        .drawer-panel {
-            position: fixed;
-            top: 0; right: -600px; bottom: 0;
-            width: 560px;
-            background: #0e0e0e;
-            border-left: 1px solid var(--border-subtle);
-            z-index: 101;
-            padding: 36px;
-            overflow-y: auto;
-            transition: right 0.25s ease;
-        }
-        .drawer-panel.active { right: 0; }
-        .drawer-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            border-bottom: 1px solid var(--border-subtle);
-            padding-bottom: 20px;
-            margin-bottom: 28px;
-        }
-        .drawer-ip-hero {
-            font-family: var(--font-mono);
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: -1px;
-        }
-        .close-drawer-btn {
-            background: none;
-            border: none;
-            color: #888888;
-            font-size: 20px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-        .close-drawer-btn:hover { color: #ffffff; }
-
-        pre {
-            background: #000000;
-            border: 1px solid var(--border-subtle);
-            border-radius: 12px;
-            padding: 16px;
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: #bbbbbb;
-            overflow-x: auto;
+            color: var(--text-3);
+            text-align: center;
+            max-width: 320px;
             line-height: 1.6;
         }
+
+        /* ─── SERVICES VIEW ───────────────────────────────────── */
+        .cards-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 14px;
+            align-content: start;
+        }
+
+        .service-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 20px;
+            transition: border-color 0.12s;
+        }
+        .service-card:hover { border-color: var(--border-hi); }
+
+        .svc-url {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--white);
+            word-break: break-all;
+        }
+        .svc-meta {
+            font-size: 11px;
+            color: var(--text-2);
+            margin-top: 6px;
+        }
+        .svc-tech-row {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .tech-chip {
+            font-family: var(--mono);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 7px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-2);
+        }
+        .ssl-badge {
+            margin-top: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+
+        /* ─── AUDIT VIEW ──────────────────────────────────────── */
+        .audit-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .finding-row {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 18px 20px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 16px;
+            align-items: start;
+        }
+        .finding-sev {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 9px;
+            border: 1px solid var(--border-hi);
+            border-radius: 4px;
+            color: var(--text-2);
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+        .finding-sev.CRITICAL, .finding-sev.HIGH {
+            border-color: #888;
+            color: var(--white);
+        }
+        .finding-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--white);
+        }
+        .finding-desc {
+            font-size: 11px;
+            color: var(--text-2);
+            margin-top: 5px;
+            line-height: 1.5;
+        }
+        .finding-fix {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-3);
+            margin-top: 8px;
+        }
+        .finding-ip {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--text-3);
+            white-space: nowrap;
+        }
+
+        /* ─── TOPOLOGY VIEW ───────────────────────────────────── */
+        #view-topology {
+            padding: 20px;
+        }
+        #topology-canvas {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            min-height: 0;
+        }
+
+        /* ─── LOGS VIEW ───────────────────────────────────── */
+        #view-logs {
+            padding: 20px;
+        }
+        .log-terminal {
+            flex: 1;
+            background: var(--black);
+            border: 1px solid var(--border);
+            border-radius: var(--r-lg);
+            padding: 18px 20px;
+            overflow-y: auto;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: #888;
+            line-height: 1.65;
+            min-height: 0;
+        }
+        .log-line { margin-bottom: 2px; }
+        .log-line .log-time { color: var(--text-3); margin-right: 10px; }
+        .log-line .log-stage { color: var(--text-2); margin-right: 8px; }
+        .log-line .log-msg { color: #aaa; }
+
+        /* ─── HOST DETAIL DRAWER ──────────────────────────────── */
+        .drawer-scrim {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+        .drawer-scrim.open { display: block; }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -680px;
+            bottom: 0;
+            width: 620px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            z-index: 201;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .drawer.open { right: 0; }
+
+        .drawer-header {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .drawer-host-ip {
+            font-family: var(--mono);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: -0.5px;
+        }
+        .drawer-host-meta {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+        .drawer-close {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            transition: color 0.12s;
+        }
+        .drawer-close:hover { color: var(--white); }
+
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 28px;
+        }
+
+        .drawer-section {
+            margin-bottom: 28px;
+        }
+        .drawer-section-label {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .drawer-section-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .kv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+        }
+        .kv-item {
+            background: var(--surface-2);
+            padding: 12px 14px;
+        }
+        .kv-key {
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 4px;
+        }
+        .kv-val {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--white);
+            word-break: break-all;
+        }
+
+        .port-detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .port-detail-row {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 12px 14px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+        .port-num {
+            font-family: var(--mono);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--white);
+            min-width: 56px;
+        }
+        .port-svc {
+            font-size: 11px;
+            color: var(--text-2);
+        }
+        .port-banner {
+            font-family: var(--mono);
+            font-size: 10px;
+            color: var(--text-3);
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+        .web-detail-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .web-detail-url {
+            font-family: var(--mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--white);
+            word-break: break-all;
+        }
+        .web-detail-meta {
+            font-size: 11px;
+            color: var(--text-2);
+            margin-top: 6px;
+        }
+
+        .finding-compact {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 12px 14px;
+            margin-bottom: 8px;
+        }
+        .finding-compact-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .finding-compact-desc {
+            font-size: 11px;
+            color: var(--text-3);
+            margin-top: 5px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="header-title-block">
-            <span class="brand-heading">NETWORK SLINGER</span>
-            <span class="brand-sub">RECONNAISSANCE ENGINE --</span>
+
+    <!-- ─── TOPBAR ─────────────────────────────────────────────── -->
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-name">Network Slinger</span>
+            <span class="brand-ver">v1.0</span>
         </div>
 
-        <nav class="header-nav">
-            <button class="nav-pill-btn active" onclick="switchTab('inventory')">INVENTORY</button>
-            <button class="nav-pill-btn" onclick="switchTab('services')">SERVICES</button>
-            <button class="nav-pill-btn" onclick="switchTab('security')">AUDIT</button>
-            <button class="nav-pill-btn" onclick="switchTab('topology')">TOPOLOGY</button>
-            <button class="nav-pill-btn" onclick="switchTab('logs')">LOGS</button>
+        <nav class="topbar-nav">
+            <div class="nav-tab active" data-view="inventory">Inventory</div>
+            <div class="nav-tab" data-view="services">Services</div>
+            <div class="nav-tab" data-view="audit">Audit</div>
+            <div class="nav-tab" data-view="topology">Topology</div>
+            <div class="nav-tab" data-view="logs">Logs</div>
         </nav>
+
+        <div class="topbar-right">
+            <div class="scan-badge" id="scan-badge">
+                <div class="scan-badge-dot"></div>
+                <span id="scan-badge-text">Idle</span>
+            </div>
+            <button class="btn btn-ghost" onclick="exportFile('json')" id="btn-export-json">Export JSON</button>
+            <button class="btn btn-ghost" onclick="exportFile('html')" id="btn-export-html">Export Report</button>
+        </div>
     </header>
 
-    <!-- Progress Line -->
-    <div class="progress-line-wrap" id="progress-line">
-        <div class="progress-line-fill" id="progress-line-fill"></div>
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap" id="progress-bar">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
     </div>
 
-    <!-- Hero Strip -->
-    <section class="hero-strip">
-        <div class="hero-banner-title">
-            <span>TARGET SPECIFICATION --</span>
+    <!-- ─── COMMAND STRIP ──────────────────────────────────────── -->
+    <div class="cmd-strip">
+        <div class="cmd-input-wrap">
+            <span class="cmd-label">Target</span>
+            <input type="text" id="target-input" class="cmd-input" placeholder="192.168.1.0/24">
         </div>
 
-        <div class="action-bar">
-            <!-- White capsule search field -->
-            <div class="input-capsule">
-                <input type="text" id="target-input" class="target-field" placeholder="192.168.1.0/24">
+        <select id="profile-select" class="cmd-select">
+            <option value="fast">Fast — 25 ports</option>
+            <option value="standard" selected>Standard — 100 ports</option>
+            <option value="extended">Extended — 1000 ports</option>
+        </select>
+
+        <div class="cmd-divider"></div>
+
+        <div class="toggle-row">
+            <div class="toggle-item on" id="toggle-web" onclick="toggleItem(this)">
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                <span class="toggle-label">HTTP Crawl</span>
             </div>
-
-            <!-- Profile dropdown -->
-            <select id="profile-select" class="select-capsule">
-                <option value="standard" selected>STANDARD (100 PORTS)</option>
-                <option value="fast">FAST (25 PORTS)</option>
-                <option value="extended">EXTENDED (1,000 PORTS)</option>
-            </select>
-
-            <!-- Big Pill Launch Button -->
-            <button class="btn-black-pill" id="btn-scan" onclick="triggerCrawl()">
-                EXECUTE SCAN
-            </button>
-        </div>
-
-        <!-- Toggles Shelf (Physical Pill Switches) -->
-        <div class="toggles-shelf">
-            <div class="shelf-toggle active" id="toggle-web-wrap" onclick="toggleSwitch('toggle-web-wrap')">
-                <div class="switch-track"><div class="switch-thumb"></div></div>
-                <span class="shelf-toggle-label">HTTP CRAWLER</span>
+            <div class="toggle-item" id="toggle-paths" onclick="toggleItem(this)">
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                <span class="toggle-label">Deep Paths</span>
             </div>
-
-            <div class="shelf-toggle" id="toggle-paths-wrap" onclick="toggleSwitch('toggle-paths-wrap')">
-                <div class="switch-track"><div class="switch-thumb"></div></div>
-                <span class="shelf-toggle-label">SENSITIVE PATHS</span>
-            </div>
-
-            <div class="shelf-toggle active" id="toggle-ssdp-wrap" onclick="toggleSwitch('toggle-ssdp-wrap')">
-                <div class="switch-track"><div class="switch-thumb"></div></div>
-                <span class="shelf-toggle-label">SSDP DISCOVERY</span>
-            </div>
-
-            <div style="margin-left: auto; display: flex; gap: 8px;">
-                <button class="btn-black-pill" style="padding: 7px 18px; font-size: 11px;" onclick="exportFile('json')">EXPORT JSON</button>
-                <button class="btn-black-pill" style="padding: 7px 18px; font-size: 11px;" onclick="exportFile('html')">EXPORT HTML</button>
+            <div class="toggle-item on" id="toggle-ssdp" onclick="toggleItem(this)">
+                <div class="toggle-track"><div class="toggle-thumb"></div></div>
+                <span class="toggle-label">SSDP</span>
             </div>
         </div>
-    </section>
 
-    <!-- Main Workspace Grid -->
-    <main class="workspace-grid">
-        <!-- Left: Dial Card & Overview -->
-        <div class="left-column">
-            <!-- White Card (Direct homage to Eline Ye Design) -->
-            <div class="white-card">
-                <div class="card-tag-head">GATEWAY LATENCY --</div>
+        <div class="cmd-divider"></div>
 
-                <div class="dial-container">
-                    <!-- SVG Radial Tick Dial -->
-                    <svg class="radial-dial-svg" viewBox="0 0 190 190">
-                        <g transform="translate(95, 95)" id="dial-ticks">
-                            <!-- Generated dynamically in JS -->
-                        </g>
+        <button class="btn btn-primary" id="btn-scan" onclick="triggerScan()">Execute Scan</button>
+    </div>
+
+    <!-- ─── MAIN WORKSPACE ────────────────────────────────────── -->
+    <div class="workspace">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <!-- Gateway Latency Dial -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Gateway Latency</div>
+                <div class="dial-wrap">
+                    <svg class="dial-ring-svg" viewBox="0 0 140 140">
+                        <g transform="translate(70,70)" id="dial-ticks-g"></g>
                     </svg>
-                    <div class="dial-center-val">
-                        <span class="dial-num" id="hero-latency">8.5</span>
-                        <span class="dial-sub">MILLISECONDS</span>
-                    </div>
-                </div>
-
-                <div class="white-card-actions">
-                    <button class="btn-card-black" onclick="triggerCrawl()">RESCAN</button>
-                    <button class="btn-card-black" onclick="switchTab('topology')">TOPOLOGY</button>
-                </div>
-            </div>
-
-            <!-- Dark Card Metrics Stack -->
-            <div class="dark-card">
-                <div class="card-tag-head" style="color: #ffffff; margin-bottom: 6px;">DISCOVERY METRICS --</div>
-                <div class="metrics-stack">
-                    <div class="metric-row">
-                        <span class="metric-title">LIVE TARGETS</span>
-                        <span class="metric-huge-num" id="val-hosts">0</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-title">ACTIVE SERVICES</span>
-                        <span class="metric-huge-num" id="val-ports">0</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-title">WEB APPLICATIONS</span>
-                        <span class="metric-huge-num" id="val-web">0</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-title">RISK ALERTS</span>
-                        <span class="metric-huge-num" id="val-threats">0</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: Device Inventory Capsules -->
-        <div class="right-column">
-            <!-- View: Inventory -->
-            <div id="view-inventory" style="display: flex; flex-direction: column; gap: 14px;">
-                <div id="device-capsules-container" style="display: flex; flex-direction: column; gap: 12px;">
-                    <!-- Populated dynamically with white device capsules -->
-                    <div style="background: #111; border: 1px solid #222; border-radius: 20px; padding: 40px; text-align: center; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                        NO ACTIVE TARGETS DISCOVERED. EXECUTE SCAN ABOVE.
+                    <div class="dial-center">
+                        <div class="dial-val" id="dial-latency-val">—</div>
+                        <div class="dial-unit">ms round-trip</div>
                     </div>
                 </div>
             </div>
 
-            <!-- View: Services -->
-            <div id="view-services" style="display: none; flex-direction: column; gap: 12px;">
-                <div id="web-services-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <!-- Discovery Metrics -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Discovery</div>
+                <div class="metric-list">
+                    <div class="metric-item">
+                        <span class="metric-key">Live Targets</span>
+                        <span class="metric-val" id="m-hosts">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-key">Open Ports</span>
+                        <span class="metric-val" id="m-ports">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-key">Web Services</span>
+                        <span class="metric-val" id="m-web">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-key">Risk Alerts</span>
+                        <span class="metric-val" id="m-alerts">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-key">Scan Duration</span>
+                        <span class="metric-val" id="m-duration">—</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- View: Security -->
-            <div id="view-security" style="display: none; flex-direction: column; gap: 12px;">
-                <div id="security-audit-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            <!-- Network Interfaces -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-label">Interfaces</div>
+                <div class="iface-list" id="iface-list">
+                    <div style="font-size:11px; color: var(--text-3);">Detecting...</div>
+                </div>
             </div>
 
-            <!-- View: Topology -->
-            <div id="view-topology" style="display: none;">
-                <div id="topology-mount" style="width: 100%; height: 550px; background: #0c0c0c; border: 1px solid #222; border-radius: 24px;"></div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+
+            <!-- ── INVENTORY VIEW ────────────────────────────── -->
+            <div class="view active" id="view-inventory">
+                <div class="table-wrap" id="inventory-wrap">
+                    <div class="empty-state" id="inventory-empty">
+                        <div class="empty-state-title">No active targets discovered</div>
+                        <div class="empty-state-sub">Configure a target range above and execute a scan to enumerate live hosts, services, and vulnerabilities.</div>
+                    </div>
+                    <table id="inventory-table" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th data-col="ip">IP Address<span class="sort-arrow">▲</span></th>
+                                <th data-col="hostname">Hostname<span class="sort-arrow">▲</span></th>
+                                <th data-col="vendor">Vendor / MAC<span class="sort-arrow">▲</span></th>
+                                <th data-col="type">Type<span class="sort-arrow">▲</span></th>
+                                <th data-col="ports">Open Ports<span class="sort-arrow">▲</span></th>
+                                <th data-col="latency">RTT<span class="sort-arrow">▲</span></th>
+                                <th data-col="risk">Risk<span class="sort-arrow">▲</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody"></tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- View: Logs -->
-            <div id="view-logs" style="display: none;">
-                <pre id="stream-output" style="height: 500px;"></pre>
+            <!-- ── SERVICES VIEW ─────────────────────────────── -->
+            <div class="view" id="view-services">
+                <div class="cards-grid" id="services-grid">
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <div class="empty-state-title">No web services found</div>
+                        <div class="empty-state-sub">Enable HTTP Crawl and run a scan to detect web applications and their technology stacks.</div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </main>
 
-    <!-- Inspection Drawer -->
-    <div class="drawer-backdrop" id="drawer-backdrop" onclick="dismissDrawer()"></div>
-    <div class="drawer-panel" id="drawer-panel">
-        <div class="drawer-head">
-            <div>
-                <div class="drawer-ip-hero" id="drawer-ip">0.0.0.0</div>
-                <div style="font-size: 12px; font-weight: 800; color: #888888; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;" id="drawer-vendor">HARDWARE TELEMETRY</div>
+            <!-- ── AUDIT VIEW ────────────────────────────────── -->
+            <div class="view" id="view-audit">
+                <div class="audit-list" id="audit-list">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No findings recorded</div>
+                        <div class="empty-state-sub">Run a scan to perform security auditing across all discovered assets.</div>
+                    </div>
+                </div>
             </div>
-            <button class="close-drawer-btn" onclick="dismissDrawer()">&times;</button>
-        </div>
-        <div id="drawer-content"></div>
+
+            <!-- ── TOPOLOGY VIEW ─────────────────────────────── -->
+            <div class="view" id="view-topology">
+                <div id="topology-canvas"></div>
+            </div>
+
+            <!-- ── LOGS VIEW ─────────────────────────────────── -->
+            <div class="view" id="view-logs">
+                <div class="log-terminal" id="log-terminal">
+                    <div class="log-line"><span class="log-msg">Network Slinger — local recon engine ready. Execute a scan to begin.</span></div>
+                </div>
+            </div>
+
+        </main>
     </div>
 
-    <!-- Script -->
-    <script>
-        let reportData = null;
-        let hostsList = [];
-        let socket = null;
-        let visGraph = null;
+    <!-- ─── HOST DETAIL DRAWER ────────────────────────────────── -->
+    <div class="drawer-scrim" id="drawer-scrim" onclick="closeDrawer()"></div>
+    <div class="drawer" id="drawer">
+        <div class="drawer-header">
+            <div>
+                <div class="drawer-host-ip" id="drawer-ip">—</div>
+                <div class="drawer-host-meta" id="drawer-meta">—</div>
+            </div>
+            <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-body" id="drawer-body"></div>
+    </div>
 
-        window.addEventListener("DOMContentLoaded", () => {
-            generateDialTicks();
-            fetchInterfaces();
-            initWebSocket();
-            fetchLatestScan();
+    <script>
+    // ─── State ────────────────────────────────────────────────────
+    let reportData = null;
+    let hostsList   = [];
+    let socket      = null;
+    let visGraph    = null;
+    let sortCol     = "ip";
+    let sortDir     = 1;
+
+    // ─── Init ─────────────────────────────────────────────────────
+    document.addEventListener("DOMContentLoaded", () => {
+        buildDialTicks();
+        loadInterfaces();
+        connectWebSocket();
+        loadActiveScan();
+        initTabNav();
+        initTableSort();
+    });
+
+    // ─── Dial ticks ───────────────────────────────────────────────
+    function buildDialTicks() {
+        const g = document.getElementById("dial-ticks-g");
+        const TOTAL = 44, R_OUTER = 58, R_INNER_SM = 52, R_INNER_LG = 49;
+        const ARC = 0.75; // fraction of circle used
+
+        for (let i = 0; i < TOTAL; i++) {
+            const frac = i / (TOTAL - 1);
+            const angle = (frac * ARC - ARC / 2) * 2 * Math.PI - Math.PI / 2;
+            const big = (i % 4 === 0);
+            const rIn = big ? R_INNER_LG : R_INNER_SM;
+            const x1 = Math.cos(angle) * rIn;
+            const y1 = Math.sin(angle) * rIn;
+            const x2 = Math.cos(angle) * R_OUTER;
+            const y2 = Math.sin(angle) * R_OUTER;
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.setAttribute("stroke", frac < 0.5 ? "#2a2a2a" : "#484848");
+            line.setAttribute("stroke-width", big ? "1.5" : "1");
+            line.setAttribute("stroke-linecap", "round");
+            g.appendChild(line);
+        }
+    }
+
+    function updateDial(ms) {
+        document.getElementById("dial-latency-val").textContent =
+            ms !== undefined && ms !== null ? parseFloat(ms).toFixed(1) : "—";
+        // Re-color ticks proportionally (0–200ms scale)
+        const pct = Math.min(ms / 200, 1);
+        const g = document.getElementById("dial-ticks-g");
+        const lines = g.querySelectorAll("line");
+        const TOTAL = lines.length;
+        lines.forEach((ln, i) => {
+            const frac = i / (TOTAL - 1);
+            ln.setAttribute("stroke", frac <= pct ? "#ffffff" : (frac < 0.5 ? "#2a2a2a" : "#484848"));
+        });
+    }
+
+    // ─── Tab navigation ───────────────────────────────────────────
+    function initTabNav() {
+        document.querySelectorAll(".nav-tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                const v = tab.dataset.view;
+                document.querySelectorAll(".view").forEach(el => el.classList.remove("active"));
+                document.getElementById(`view-${v}`).classList.add("active");
+                if (v === "topology" && reportData) setTimeout(renderTopology, 30);
+            });
+        });
+    }
+
+    // ─── Interfaces ───────────────────────────────────────────────
+    async function loadInterfaces() {
+        try {
+            const res = await fetch("/api/interfaces");
+            const data = await res.json();
+            const list = document.getElementById("iface-list");
+            if (data.interfaces && data.interfaces.length > 0) {
+                list.innerHTML = "";
+                data.interfaces.forEach((iface, i) => {
+                    const el = document.createElement("div");
+                    el.className = "iface-item" + (i === 0 ? " selected" : "");
+                    el.innerHTML = `<div class="iface-name">${iface.name}</div><div class="iface-cidr">${iface.cidr}</div>`;
+                    el.addEventListener("click", () => {
+                        document.querySelectorAll(".iface-item").forEach(x => x.classList.remove("selected"));
+                        el.classList.add("selected");
+                        document.getElementById("target-input").value = iface.cidr;
+                    });
+                    list.appendChild(el);
+                });
+                document.getElementById("target-input").value = data.interfaces[0].cidr;
+            } else {
+                list.innerHTML = `<div style="font-size:11px; color: var(--text-3);">No active interfaces found.</div>`;
+            }
+        } catch(e) {
+            document.getElementById("iface-list").innerHTML = `<div style="font-size:11px; color: var(--text-3);">Interface detection failed.</div>`;
+        }
+    }
+
+    // ─── Toggle switches ──────────────────────────────────────────
+    function toggleItem(el) {
+        el.classList.toggle("on");
+    }
+
+    // ─── Scan trigger ─────────────────────────────────────────────
+    async function triggerScan() {
+        const target  = document.getElementById("target-input").value.trim();
+        const profile = document.getElementById("profile-select").value;
+        const crawlWeb = document.getElementById("toggle-web").classList.contains("on");
+        const deepPath = document.getElementById("toggle-paths").classList.contains("on");
+        const ssdp     = document.getElementById("toggle-ssdp").classList.contains("on");
+
+        setScanRunning(true);
+        clearLog();
+        addLog("INIT", `Dispatching reconnaissance engine on ${target || "auto-detected LAN"}...`);
+
+        try {
+            const resp = await fetch("/api/scan", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    targets: target ? [target] : [],
+                    port_profile: profile,
+                    crawl_web: crawlWeb,
+                    deep_web_crawl: deepPath,
+                    enable_multicast: ssdp,
+                    concurrency: 150,
+                    timeout: 1.0
+                })
+            });
+            if (!resp.ok) {
+                addLog("ERROR", `HTTP ${resp.status} — Scan failed to start.`);
+                setScanRunning(false);
+            }
+        } catch(e) {
+            addLog("ERROR", `Network error: ${e.message}`);
+            setScanRunning(false);
+        }
+    }
+
+    // ─── WebSocket ────────────────────────────────────────────────
+    function connectWebSocket() {
+        const proto = location.protocol === "https:" ? "wss:" : "ws:";
+        socket = new WebSocket(`${proto}//${location.host}/ws/scan`);
+        socket.onmessage = e => {
+            try {
+                const msg = JSON.parse(e.data);
+                if      (msg.type === "progress") handleProgress(msg.data);
+                else if (msg.type === "complete") handleComplete(msg.data);
+                else if (msg.type === "log")      addLog("SYS", msg.message);
+            } catch(_) {}
+        };
+        socket.onclose = () => setTimeout(connectWebSocket, 2500);
+    }
+
+    function handleProgress(p) {
+        const pct = Math.min(Math.max(p.percent || 0, 0), 100);
+        document.getElementById("progress-bar").style.display = "block";
+        document.getElementById("progress-bar-fill").style.width = pct + "%";
+        document.getElementById("scan-badge-text").textContent = `${p.stage} — ${Math.round(pct)}%`;
+        addLog(p.stage, p.message);
+    }
+
+    function handleComplete(report) {
+        reportData = report;
+        hostsList  = report.hosts || [];
+
+        setScanRunning(false);
+        document.getElementById("progress-bar-fill").style.width = "100%";
+        setTimeout(() => { document.getElementById("progress-bar").style.display = "none"; }, 1200);
+
+        // Sidebar metrics
+        document.getElementById("m-hosts").textContent    = report.summary.live_hosts_found;
+        document.getElementById("m-ports").textContent    = report.summary.total_open_ports;
+        document.getElementById("m-web").textContent      = report.summary.total_web_services;
+        document.getElementById("m-alerts").textContent   = (report.summary.critical_risks || 0) + (report.summary.high_risks || 0);
+        document.getElementById("m-duration").textContent = report.duration_seconds + "s";
+
+        // Dial — gateway latency (first host RTT as proxy)
+        if (hostsList.length > 0 && hostsList[0].latency_ms) {
+            updateDial(hostsList[0].latency_ms);
+        }
+
+        renderInventory();
+        renderServices();
+        renderAudit();
+
+        addLog("COMPLETE", `Discovered ${report.summary.live_hosts_found} targets · ${report.summary.total_open_ports} open ports · ${report.duration_seconds}s`);
+    }
+
+    function setScanRunning(running) {
+        const btn   = document.getElementById("btn-scan");
+        const badge = document.getElementById("scan-badge");
+        btn.disabled = running;
+        if (running) {
+            badge.classList.add("running");
+            document.getElementById("scan-badge-text").textContent = "Running...";
+        } else {
+            badge.classList.remove("running");
+            document.getElementById("scan-badge-text").textContent = reportData ? "Complete" : "Idle";
+        }
+    }
+
+    // ─── Log terminal ─────────────────────────────────────────────
+    function clearLog() {
+        document.getElementById("log-terminal").innerHTML = "";
+    }
+    function addLog(stage, msg) {
+        const el   = document.getElementById("log-terminal");
+        const time = new Date().toLocaleTimeString("en-US", { hour12: false });
+        const line = document.createElement("div");
+        line.className = "log-line";
+        line.innerHTML = `<span class="log-time">${time}</span><span class="log-stage">[${(stage||"SYS").toUpperCase()}]</span><span class="log-msg">${escapeHtml(msg)}</span>`;
+        el.appendChild(line);
+        el.scrollTop = el.scrollHeight;
+    }
+
+    // ─── Inventory table ──────────────────────────────────────────
+    function initTableSort() {
+        document.querySelectorAll("thead th[data-col]").forEach(th => {
+            th.addEventListener("click", () => {
+                const col = th.dataset.col;
+                if (sortCol === col) sortDir *= -1;
+                else { sortCol = col; sortDir = 1; }
+                document.querySelectorAll("thead th").forEach(t => t.classList.remove("sorted"));
+                th.classList.add("sorted");
+                th.querySelector(".sort-arrow").textContent = sortDir === 1 ? "▲" : "▼";
+                if (hostsList.length) renderInventory();
+            });
+        });
+    }
+
+    function renderInventory() {
+        const empty = document.getElementById("inventory-empty");
+        const table = document.getElementById("inventory-table");
+        const tbody = document.getElementById("inventory-tbody");
+
+        if (!hostsList || hostsList.length === 0) {
+            empty.style.display = "flex";
+            table.style.display = "none";
+            return;
+        }
+
+        empty.style.display = "none";
+        table.style.display = "table";
+
+        const sorted = [...hostsList].sort((a, b) => {
+            let va, vb;
+            switch(sortCol) {
+                case "ip":       va = ipToNum(a.ip);    vb = ipToNum(b.ip);    break;
+                case "hostname": va = a.hostname || ""; vb = b.hostname || ""; break;
+                case "vendor":   va = a.vendor || "";   vb = b.vendor || "";   break;
+                case "type":     va = a.device_type||""; vb = b.device_type||""; break;
+                case "ports":    va = a.open_ports.length; vb = b.open_ports.length; break;
+                case "latency":  va = a.latency_ms || 0; vb = b.latency_ms || 0; break;
+                case "risk":     va = a.risk_score || 0; vb = b.risk_score || 0; break;
+                default:         va = ""; vb = "";
+            }
+            if (va < vb) return -sortDir;
+            if (va > vb) return  sortDir;
+            return 0;
         });
 
-        // Generate radial tick marks (Thermostat dial style from image)
-        function generateDialTicks() {
-            const group = document.getElementById("dial-ticks");
-            const totalTicks = 48;
-            const radius = 78;
+        tbody.innerHTML = sorted.map((h, idx) => {
+            const realIdx = hostsList.indexOf(h);
+            const ports = h.open_ports.slice(0, 6).map(p =>
+                `<span class="port-chip">${p.port}<span style="color:var(--text-3)">/${p.service}</span></span>`
+            ).join("") + (h.open_ports.length > 6 ? `<span class="port-chip" style="color:var(--text-3)">+${h.open_ports.length-6}</span>` : "");
 
-            for (let i = 0; i < totalTicks; i++) {
-                const angle = (i / totalTicks) * 2 * Math.PI - Math.PI / 2;
-                // Only draw bottom 270 degrees
-                if (i > 36) continue;
+            const typeTag = h.device_type || "Unknown Host";
+            const typeClass = typeTag.includes("Gateway") ? "gateway" : typeTag.includes("Server") ? "server" : "";
+            const mac = h.mac_address || "—";
+            const riskPct = Math.min((h.risk_score || 0), 100);
 
-                const x1 = Math.cos(angle) * (radius - 8);
-                const y1 = Math.sin(angle) * (radius - 8);
-                const x2 = Math.cos(angle) * radius;
-                const y2 = Math.sin(angle) * radius;
-
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", x1);
-                line.setAttribute("y1", y1);
-                line.setAttribute("x2", x2);
-                line.setAttribute("y2", y2);
-                line.setAttribute("stroke", i < 18 ? "#000000" : "#cccccc");
-                line.setAttribute("stroke-width", "2");
-                line.setAttribute("stroke-linecap", "round");
-                group.appendChild(line);
-            }
-        }
-
-        function toggleSwitch(id) {
-            document.getElementById(id).classList.toggle("active");
-        }
-
-        async function fetchInterfaces() {
-            try {
-                const res = await fetch("/api/interfaces");
-                const data = await res.json();
-                if (data.interfaces && data.interfaces.length > 0) {
-                    document.getElementById("target-input").value = data.interfaces[0].cidr;
-                }
-            } catch(e) {}
-        }
-
-        function switchTab(viewId) {
-            document.querySelectorAll(".nav-pill-btn").forEach(b => b.classList.remove("active"));
-            const target = Array.from(document.querySelectorAll(".nav-pill-btn")).find(b => b.getAttribute("onclick").includes(viewId));
-            if (target) target.classList.add("active");
-
-            ["inventory", "services", "security", "topology", "logs"].forEach(v => {
-                const el = document.getElementById(`view-${v}`);
-                if (el) el.style.display = (v === viewId) ? "flex" : "none";
-            });
-
-            if (viewId === "topology" && reportData && reportData.topology) {
-                setTimeout(renderTopology, 50);
-            }
-        }
-
-        function initWebSocket() {
-            const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-            socket = new WebSocket(`${proto}//${window.location.host}/ws/scan`);
-
-            socket.onmessage = (e) => {
-                try {
-                    const msg = JSON.parse(e.data);
-                    if (msg.type === "progress") {
-                        onProgress(msg.data);
-                    } else if (msg.type === "complete") {
-                        onComplete(msg.data);
-                    } else if (msg.type === "log") {
-                        appendStream(msg.message);
-                    }
-                } catch(err) {}
-            };
-
-            socket.onclose = () => { setTimeout(initWebSocket, 2000); };
-        }
-
-        async function triggerCrawl() {
-            const target = document.getElementById("target-input").value.trim();
-            const profile = document.getElementById("profile-select").value;
-            const crawlWeb = document.getElementById("toggle-web-wrap").classList.contains("active");
-            const deep = document.getElementById("toggle-paths-wrap").classList.contains("active");
-            const ssdp = document.getElementById("toggle-ssdp-wrap").classList.contains("active");
-
-            const payload = {
-                targets: target ? [target] : [],
-                port_profile: profile,
-                crawl_web: crawlWeb,
-                deep_web_crawl: deep,
-                enable_multicast: ssdp,
-                concurrency: 150,
-                timeout: 1.0
-            };
-
-            document.getElementById("btn-scan").disabled = true;
-            document.getElementById("progress-line").style.display = "block";
-            document.getElementById("stream-output").textContent = `[START] DISPATCHING NETWORK RECONNAISSANCE ENGINE...\n`;
-
-            try {
-                await fetch("/api/scan", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-            } catch(e) {
-                alert("Execution failed: " + e.message);
-                document.getElementById("btn-scan").disabled = false;
-            }
-        }
-
-        function onProgress(p) {
-            document.getElementById("progress-line-fill").style.width = `${p.percent}%`;
-            appendStream(`[${p.stage}] ${p.message}`);
-        }
-
-        function onComplete(report) {
-            reportData = report;
-            hostsList = report.hosts || [];
-
-            document.getElementById("btn-scan").disabled = false;
-            document.getElementById("progress-line-fill").style.width = "100%";
-
-            document.getElementById("val-hosts").textContent = report.summary.live_hosts_found;
-            document.getElementById("val-ports").textContent = report.summary.total_open_ports;
-            document.getElementById("val-web").textContent = report.summary.total_web_services;
-            document.getElementById("val-threats").textContent = report.summary.critical_risks + report.summary.high_risks;
-
-            if (hostsList.length > 0) {
-                document.getElementById("hero-latency").textContent = hostsList[0].latency_ms || "1.2";
-            }
-
-            renderDeviceCapsules(report.hosts);
-            renderServices(report.hosts);
-            renderAudit(report.hosts);
-            appendStream(`[COMPLETE] DISCOVERED ${report.summary.live_hosts_found} TARGETS IN ${report.duration_seconds}s.`);
-        }
-
-        function appendStream(msg) {
-            const feed = document.getElementById("stream-output");
-            feed.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-            feed.scrollTop = feed.scrollHeight;
-        }
-
-        // Render Device Capsule Cards (Eline Ye White Capsule style)
-        function renderDeviceCapsules(hosts) {
-            const container = document.getElementById("device-capsules-container");
-
-            if (!hosts || hosts.length === 0) {
-                container.innerHTML = `<div style="background: #111; border: 1px solid #222; border-radius: 20px; padding: 40px; text-align: center; color: #666; font-weight: 700; text-transform: uppercase;">NO ACTIVE TARGETS FOUND.</div>`;
-                return;
-            }
-
-            container.innerHTML = hosts.map((h, idx) => {
-                const ports = h.open_ports.map(p => `<span class="mono-chip-dark">${p.port}/${p.service}</span>`).join(" ");
-
-                return `
-                    <div class="device-capsule-card" onclick="inspectHost(${idx})">
-                        <div class="device-info-left">
-                            <div class="device-title-row">
-                                <span class="device-ip">${h.ip}</span>
-                                <span class="device-type-tag">${h.device_type}</span>
-                            </div>
-                            <div class="device-meta">${h.vendor} &bull; ${h.hostname || (h.ssdp_info ? h.ssdp_info.friendly_name : '') || 'UNNAMED HOST'}</div>
-                            <div class="device-ports-list">${ports || '<span style="font-size: 11px; color: #888;">NO OPEN PORTS</span>'}</div>
-                        </div>
-
-                        <div class="device-right-status">
-                            <span class="device-latency">${h.latency_ms} MS</span>
-                            <button class="btn-inspect-pill" onclick="event.stopPropagation(); inspectHost(${idx})">INSPECT</button>
-                        </div>
+            return `<tr onclick="openDrawer(${realIdx})">
+                <td class="td-ip">${escapeHtml(h.ip)}</td>
+                <td style="color:var(--text-2);font-size:12px;">${escapeHtml(h.hostname || "—")}</td>
+                <td>
+                    <div class="td-vendor">${escapeHtml(h.vendor || "Unknown")}</div>
+                    <div class="td-mac">${escapeHtml(mac)}</div>
+                </td>
+                <td><span class="type-tag ${typeClass}">${escapeHtml(typeTag)}</span></td>
+                <td><div class="port-chips">${ports || '<span style="color:var(--text-3);font-size:11px;">—</span>'}</div></td>
+                <td class="latency-val">${h.latency_ms ? parseFloat(h.latency_ms).toFixed(1)+"ms" : "—"}</td>
+                <td>
+                    <div class="risk-badge">
+                        <div class="risk-bar"><div class="risk-bar-fill" style="width:${riskPct}%"></div></div>
+                        ${h.risk_level || "INFO"}
                     </div>
-                `;
-            }).join("");
+                </td>
+            </tr>`;
+        }).join("");
+    }
+
+    // ─── Services view ────────────────────────────────────────────
+    function renderServices() {
+        const grid = document.getElementById("services-grid");
+        const services = [];
+        (hostsList || []).forEach(h => (h.web_services || []).forEach(w => services.push({ h, w })));
+
+        if (services.length === 0) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+                <div class="empty-state-title">No web services found</div>
+                <div class="empty-state-sub">Enable HTTP Crawl and run a scan to detect web applications.</div>
+            </div>`;
+            return;
         }
 
-        function renderServices(hosts) {
-            const container = document.getElementById("web-services-container");
-            const services = [];
-            hosts.forEach(h => h.web_services.forEach(w => services.push({ host: h, web: w })));
+        grid.innerHTML = services.map(({ h, w }) => {
+            const techs = (w.tech_stack || []).map(t => `<span class="tech-chip">${escapeHtml(t)}</span>`).join("");
+            const sslStr = w.ssl_info ? (w.ssl_info.is_expired ? "SSL Expired" : `SSL Valid — ${w.ssl_info.days_left || "?"}d`) : (w.is_https ? "SSL Present" : "No SSL");
+            return `<div class="service-card">
+                <div class="svc-url">${escapeHtml(w.url)}</div>
+                <div class="svc-meta">${escapeHtml(w.title || "Untitled")} — ${escapeHtml(w.server || "Unknown server")} — HTTP ${w.status_code}</div>
+                <div class="svc-tech-row">${techs}</div>
+                <div class="ssl-badge">${escapeHtml(sslStr)}</div>
+            </div>`;
+        }).join("");
+    }
 
-            if (services.length === 0) {
-                container.innerHTML = `<div style="background: #111; border: 1px solid #222; border-radius: 20px; padding: 40px; text-align: center; color: #666; font-weight: 700;">NO WEB APPLICATIONS FOUND.</div>`;
-                return;
-            }
+    // ─── Audit view ───────────────────────────────────────────────
+    function renderAudit() {
+        const list = document.getElementById("audit-list");
+        const findings = [];
+        (hostsList || []).forEach(h => (h.security_findings || []).forEach(f => findings.push({ h, f })));
 
-            container.innerHTML = services.map(s => {
-                const w = s.web;
-                return `
-                    <div class="device-capsule-card">
-                        <div class="device-info-left">
-                            <div class="device-title-row">
-                                <span class="device-ip">${w.url}</span>
-                                <span class="device-type-tag">HTTP ${w.status_code}</span>
-                            </div>
-                            <div class="device-meta">${w.title || 'UNTITLED APPLICATION'} &bull; ${w.server || 'UNKNOWN SERVER'}</div>
-                            <div class="device-ports-list">
-                                ${w.tech_stack.map(t => `<span class="mono-chip-dark">${t}</span>`).join(" ")}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join("");
+        if (findings.length === 0) {
+            list.innerHTML = `<div class="empty-state">
+                <div class="empty-state-title">No findings recorded</div>
+                <div class="empty-state-sub">All scanned targets appear compliant based on current heuristics.</div>
+            </div>`;
+            return;
         }
 
-        function renderAudit(hosts) {
-            const container = document.getElementById("security-audit-container");
-            const findings = [];
-            hosts.forEach(h => h.security_findings.forEach(f => findings.push({ host: h, finding: f })));
+        // Sort by severity
+        const sevOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
+        findings.sort((a, b) => (sevOrder[a.f.severity] || 4) - (sevOrder[b.f.severity] || 4));
 
-            if (findings.length === 0) {
-                container.innerHTML = `<div style="background: #111; border: 1px solid #222; border-radius: 20px; padding: 40px; text-align: center; color: #666; font-weight: 700;">ALL TARGETS CURRENTLY COMPLIANT.</div>`;
-                return;
-            }
-
-            container.innerHTML = findings.map(item => {
-                const f = item.finding;
-                return `
-                    <div class="device-capsule-card" style="border-left: 6px solid #000000;">
-                        <div class="device-info-left">
-                            <div class="device-title-row">
-                                <span class="device-ip">${item.host.ip}${f.port ? `:${f.port}` : ''}</span>
-                                <span class="device-type-tag">${f.severity}</span>
-                            </div>
-                            <div style="font-size: 13px; font-weight: 800; margin-top: 4px;">${f.title}</div>
-                            <div style="font-size: 12px; color: #666666; margin-top: 4px;">${f.description}</div>
-                            <div style="font-size: 12px; font-weight: 700; margin-top: 6px; color: #000000;">FIX: ${f.remediation}</div>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        }
-
-        function renderTopology() {
-            if (!reportData || !reportData.topology) return;
-            const mount = document.getElementById("topology-mount");
-
-            const nodes = reportData.topology.nodes.map(n => ({
-                id: n.id,
-                label: n.label,
-                color: { background: n.group === 'gateway' ? '#ffffff' : '#1e1e1e', border: '#ffffff' },
-                shape: 'dot',
-                size: n.group === 'gateway' ? 24 : 16,
-                font: { color: '#ffffff', size: 11, face: 'Plus Jakarta Sans' }
-            }));
-
-            const edges = reportData.topology.edges.map(e => ({
-                from: e.source,
-                to: e.target,
-                color: { color: '#333333' }
-            }));
-
-            visGraph = new vis.Network(mount, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
-                physics: { barnesHut: { gravitationalConstant: -2600 } }
-            });
-        }
-
-        function inspectHost(idx) {
-            const h = hostsList[idx];
-            if (!h) return;
-
-            document.getElementById("drawer-ip").textContent = h.ip;
-            document.getElementById("drawer-vendor").textContent = `${h.vendor} • ${h.device_type}`;
-
-            const ports = h.open_ports.map(p => `
-                <div style="background: #000000; border: 1px solid #222222; border-radius: 12px; padding: 14px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-weight: 800;">
-                        <span style="font-family: var(--font-mono); color: #ffffff;">PORT ${p.port}/${p.service}</span>
-                        <span style="font-size: 11px; text-transform: uppercase;">${p.risk_level}</span>
-                    </div>
-                    ${p.banner ? `<div style="font-family: var(--font-mono); font-size: 11px; color: #888888; margin-top: 6px;">${p.banner}</div>` : ''}
+        list.innerHTML = findings.map(({ h, f }) => `
+            <div class="finding-row">
+                <span class="finding-sev ${f.severity}">${escapeHtml(f.severity)}</span>
+                <div>
+                    <div class="finding-title">${escapeHtml(f.title)}</div>
+                    <div class="finding-desc">${escapeHtml(f.description)}</div>
+                    ${f.remediation ? `<div class="finding-fix">Remediation — ${escapeHtml(f.remediation)}</div>` : ""}
                 </div>
-            `).join("");
+                <div class="finding-ip">${escapeHtml(h.ip)}${f.port ? `:${f.port}` : ""}</div>
+            </div>
+        `).join("");
+    }
 
-            document.getElementById("drawer-content").innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; font-size: 12px;">
-                    <div><span style="color: #666666; font-weight: 800; text-transform: uppercase;">MAC ADDRESS</span><br><strong style="font-family: var(--font-mono);">${h.mac_address || '-'}</strong></div>
-                    <div><span style="color: #666666; font-weight: 800; text-transform: uppercase;">PING RTT</span><br><strong style="font-family: var(--font-mono);">${h.latency_ms} MS</strong></div>
+    // ─── Topology ─────────────────────────────────────────────────
+    function renderTopology() {
+        if (!reportData || !reportData.topology) return;
+        const mount = document.getElementById("topology-canvas");
+        if (visGraph) { visGraph.destroy(); visGraph = null; }
+
+        const nodes = reportData.topology.nodes.map(n => ({
+            id:    n.id,
+            label: n.label,
+            color: {
+                background: n.group === "gateway" ? "#ffffff" : "#1c1c1c",
+                border:     n.group === "gateway" ? "#ffffff" : "#333333",
+                highlight:  { background: "#ffffff", border: "#ffffff" }
+            },
+            font:  { color: n.group === "gateway" ? "#000000" : "#cccccc", size: 11, face: "Segoe UI, Arial" },
+            shape: "dot",
+            size:  n.group === "gateway" ? 22 : (n.group === "service_web" ? 10 : 16),
+        }));
+
+        const edges = reportData.topology.edges.map(e => ({
+            from:  e.source,
+            to:    e.target,
+            label: e.label || "",
+            color: { color: "#2e2e2e", highlight: "#555555" },
+            font:  { color: "#555555", size: 9 },
+            width: e.edge_type === "service_port" ? 1 : 1.5
+        }));
+
+        const options = {
+            physics: {
+                enabled: true,
+                barnesHut: { gravitationalConstant: -3000, springLength: 120, damping: 0.5 }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200,
+                navigationButtons: false,
+                keyboard: true
+            }
+        };
+
+        visGraph = new vis.Network(
+            mount,
+            { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) },
+            options
+        );
+    }
+
+    // ─── Host Drawer ──────────────────────────────────────────────
+    function openDrawer(idx) {
+        const h = hostsList[idx];
+        if (!h) return;
+
+        document.getElementById("drawer-ip").textContent = h.ip;
+        document.getElementById("drawer-meta").textContent =
+            `${h.vendor || "Unknown Vendor"}  ·  ${h.device_type || "Unknown"}  ·  Risk: ${h.risk_level}`;
+
+        let html = "";
+
+        // KV overview
+        html += `<div class="drawer-section">
+            <div class="drawer-section-label">Host Details</div>
+            <div class="kv-grid">
+                <div class="kv-item"><div class="kv-key">MAC Address</div><div class="kv-val">${escapeHtml(h.mac_address || "N/A")}</div></div>
+                <div class="kv-item"><div class="kv-key">Ping RTT</div><div class="kv-val">${h.latency_ms ? parseFloat(h.latency_ms).toFixed(2) + " ms" : "N/A"}</div></div>
+                <div class="kv-item"><div class="kv-key">Hostname</div><div class="kv-val">${escapeHtml(h.hostname || "—")}</div></div>
+                <div class="kv-item"><div class="kv-key">Risk Score</div><div class="kv-val">${h.risk_score || 0} / 100</div></div>
+                ${h.os_hint ? `<div class="kv-item"><div class="kv-key">OS Hint</div><div class="kv-val">${escapeHtml(h.os_hint)}</div></div>` : ""}
+                ${h.ssdp_info && h.ssdp_info.friendly_name ? `<div class="kv-item"><div class="kv-key">SSDP Name</div><div class="kv-val">${escapeHtml(h.ssdp_info.friendly_name)}</div></div>` : ""}
+            </div>
+        </div>`;
+
+        // Ports
+        if (h.open_ports && h.open_ports.length > 0) {
+            html += `<div class="drawer-section">
+                <div class="drawer-section-label">Open Ports &amp; Services</div>
+                <div class="port-detail-list">
+                    ${h.open_ports.map(p => `
+                        <div class="port-detail-row">
+                            <div>
+                                <div class="port-num">${p.port}</div>
+                                <div style="font-size:9px;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;">${p.protocol||"tcp"}</div>
+                            </div>
+                            <div>
+                                <div class="port-svc">${escapeHtml(p.service || "unknown")}</div>
+                                ${p.banner ? `<div class="port-banner">${escapeHtml(p.banner.substring(0,120))}</div>` : ""}
+                            </div>
+                            <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3)">${p.risk_level||"INFO"}</div>
+                        </div>
+                    `).join("")}
                 </div>
-                <div style="font-size: 11px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #666666; margin-bottom: 12px;">SERVICES & BANNERS --</div>
-                ${ports || '<p style="color: #666666;">NO OPEN PORTS IDENTIFIED.</p>'}
-            `;
-
-            document.getElementById("drawer-backdrop").classList.add("active");
-            document.getElementById("drawer-panel").classList.add("active");
+            </div>`;
         }
 
-        function dismissDrawer() {
-            document.getElementById("drawer-backdrop").classList.remove("active");
-            document.getElementById("drawer-panel").classList.remove("active");
+        // Web services
+        if (h.web_services && h.web_services.length > 0) {
+            html += `<div class="drawer-section">
+                <div class="drawer-section-label">Web Applications</div>
+                ${h.web_services.map(w => `
+                    <div class="web-detail-card">
+                        <div class="web-detail-url">${escapeHtml(w.url)}</div>
+                        <div class="web-detail-meta">${escapeHtml(w.title || "No title")} — ${escapeHtml(w.server || "Unknown")} — HTTP ${w.status_code}</div>
+                        ${w.tech_stack && w.tech_stack.length ? `<div class="svc-tech-row" style="margin-top:10px;">${w.tech_stack.map(t=>`<span class="tech-chip">${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+                        ${w.missing_security_headers && w.missing_security_headers.length ? `<div style="font-size:10px;color:var(--text-3);margin-top:8px;">Missing headers: ${escapeHtml(w.missing_security_headers.join(", "))}</div>` : ""}
+                    </div>
+                `).join("")}
+            </div>`;
         }
 
-        function exportFile(fmt) {
-            if (!reportData) { alert("Please execute a crawl first."); return; }
-            window.open(`/api/export/${reportData.scan_id}?format=${fmt}`, "_blank");
+        // Security findings
+        if (h.security_findings && h.security_findings.length > 0) {
+            html += `<div class="drawer-section">
+                <div class="drawer-section-label">Security Findings</div>
+                ${h.security_findings.map(f => `
+                    <div class="finding-compact">
+                        <div class="finding-compact-title">
+                            <span class="finding-sev ${f.severity}" style="padding:2px 7px;font-size:8px;">${f.severity}</span>
+                            ${escapeHtml(f.title)}
+                        </div>
+                        <div class="finding-compact-desc">${escapeHtml(f.description)}</div>
+                        ${f.remediation ? `<div style="font-size:10px;font-weight:700;color:var(--text-3);margin-top:6px;">${escapeHtml(f.remediation)}</div>` : ""}
+                    </div>
+                `).join("")}
+            </div>`;
         }
 
-        async function fetchLatestScan() {
-            try {
-                const res = await fetch("/api/scan/active");
-                const data = await res.json();
-                if (data && data.hosts) onComplete(data);
-            } catch(e) {}
-        }
+        document.getElementById("drawer-body").innerHTML = html;
+        document.getElementById("drawer-scrim").classList.add("open");
+        document.getElementById("drawer").classList.add("open");
+    }
+
+    function closeDrawer() {
+        document.getElementById("drawer-scrim").classList.remove("open");
+        document.getElementById("drawer").classList.remove("open");
+    }
+
+    // ─── Export ───────────────────────────────────────────────────
+    function exportFile(fmt) {
+        if (!reportData) return;
+        window.open(`/api/export/${reportData.scan_id}?format=${fmt}`, "_blank");
+    }
+
+    // ─── Load existing scan ───────────────────────────────────────
+    async function loadActiveScan() {
+        try {
+            const res  = await fetch("/api/scan/active");
+            const data = await res.json();
+            if (data && data.hosts) handleComplete(data);
+        } catch(_) {}
+    }
+
+    // ─── Utilities ────────────────────────────────────────────────
+    function ipToNum(ip) {
+        return (ip || "").split(".").reduce((acc, oct) => (acc << 8) + parseInt(oct || 0, 10), 0) >>> 0;
+    }
+
+    function escapeHtml(str) {
+        if (typeof str !== "string") str = String(str || "");
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
     </script>
 </body>
 </html>

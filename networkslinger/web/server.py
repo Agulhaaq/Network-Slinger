@@ -224,15 +224,19 @@ async def websocket_endpoint(websocket: WebSocket):
     """Real-time bidirectional WebSocket stream for live scanning progress."""
     await manager.connect(websocket)
     try:
-        # Send current status on connect
+        # Send current status on connect if a scan is in progress
         if active_crawler:
             await websocket.send_text(json.dumps({
                 "type": "progress",
                 "data": active_crawler.progress.model_dump()
             }, default=str))
+        # Keep-alive loop — clients may send pings or nothing
         while True:
-            # Keep-alive receive loop
-            data = await websocket.receive_text()
+            try:
+                await asyncio.wait_for(websocket.receive_text(), timeout=30)
+            except asyncio.TimeoutError:
+                # Send a keep-alive ping so browsers don't close the connection
+                await websocket.send_text(json.dumps({"type": "ping"}))
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
