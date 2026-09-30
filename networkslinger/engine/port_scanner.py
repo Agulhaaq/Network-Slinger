@@ -55,7 +55,7 @@ KNOWN_SERVICES: Dict[int, str] = {
     3306: "mysql",
     3389: "rdp",
     4443: "https-alt",
-    5000: "http-alt / upnp",
+    5000: "http-alt",
     5060: "sip",
     5353: "mdns",
     5432: "postgresql",
@@ -71,13 +71,35 @@ KNOWN_SERVICES: Dict[int, str] = {
     8081: "http-alt",
     8443: "https-alt",
     8888: "http-alt",
-    9000: "portainer / sonar",
+    9000: "portainer",
     9090: "prometheus",
     9100: "node-exporter",
     9200: "elasticsearch",
     9418: "git",
     11211: "memcached",
     27017: "mongodb",
+}
+
+# Ports with preliminary risk hints (port -> (RiskLevel, reason))
+PORT_RISK_MAP: Dict[int, tuple] = {
+    23:    (RiskLevel.HIGH,     "Telnet transmits all credentials in cleartext"),
+    21:    (RiskLevel.MEDIUM,   "FTP is unencrypted; check for anonymous access"),
+    69:    (RiskLevel.MEDIUM,   "TFTP is unauthenticated and unencrypted"),
+    161:   (RiskLevel.MEDIUM,   "SNMP port exposed; check for default community strings"),
+    2375:  (RiskLevel.CRITICAL, "Unencrypted Docker daemon API — allows root RCE"),
+    5900:  (RiskLevel.HIGH,     "VNC remote desktop exposed — check for weak/no auth"),
+    6379:  (RiskLevel.HIGH,     "Redis database exposed to network — check authentication"),
+    11211: (RiskLevel.HIGH,     "Memcached exposed to network — no authentication by design"),
+    27017: (RiskLevel.MEDIUM,   "MongoDB exposed to network; verify authentication is enabled"),
+    9200:  (RiskLevel.MEDIUM,   "Elasticsearch API exposed; check for open access"),
+    873:   (RiskLevel.MEDIUM,   "Rsync exposed; unauth access allows arbitrary file read/write"),
+    1883:  (RiskLevel.MEDIUM,   "MQTT broker exposed; check for unauthenticated access"),
+    3389:  (RiskLevel.LOW,      "RDP exposed to network — ensure strong authentication and NLA"),
+    445:   (RiskLevel.MEDIUM,   "SMB/CIFS port exposed; ensure patched against EternalBlue/MS17-010"),
+    139:   (RiskLevel.LOW,      "NetBIOS session service exposed"),
+    135:   (RiskLevel.LOW,      "MSRPC endpoint mapper exposed"),
+    1723:  (RiskLevel.MEDIUM,   "PPTP VPN — weak encryption, deprecated protocol"),
+    1080:  (RiskLevel.MEDIUM,   "SOCKS proxy port exposed"),
 }
 
 # Top 25 Ports (Fast Profile)
@@ -145,8 +167,9 @@ async def check_port(
     """Asynchronously checks if a single TCP port is open."""
     async with semaphore:
         try:
-            conn = asyncio.open_connection(ip, port)
-            reader, writer = await asyncio.wait_for(conn, timeout=timeout)
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(ip, port), timeout=timeout
+            )
             writer.close()
             try:
                 await writer.wait_closed()
@@ -154,22 +177,9 @@ async def check_port(
                 pass
 
             service = KNOWN_SERVICES.get(port, "unknown")
-            risk = RiskLevel.INFO
-            reason = ""
 
-            # Preliminary risk hints
-            if port == 23:
-                risk = RiskLevel.HIGH
-                reason = "Telnet protocol transmits all credentials in cleartext"
-            elif port == 21:
-                risk = RiskLevel.MEDIUM
-                reason = "FTP is unencrypted; check for anonymous access"
-            elif port in (6379, 27017, 11211):
-                risk = RiskLevel.HIGH
-                reason = f"NoSQL/Cache port ({service}) exposed to network"
-            elif port == 2375:
-                risk = RiskLevel.CRITICAL
-                reason = "Unencrypted Docker daemon socket allows root remote execution"
+            # Look up risk level from the expanded risk map
+            risk, reason = PORT_RISK_MAP.get(port, (RiskLevel.INFO, ""))
 
             return PortResult(
                 port=port,
@@ -188,7 +198,7 @@ async def scan_host_ports(
     ports: List[int],
     concurrency: int = 150,
     timeout: float = 1.0,
-    progress_callback = None
+    progress_callback=None
 ) -> List[PortResult]:
     """Scans a list of TCP ports for a given IP with concurrency limit."""
     semaphore = asyncio.Semaphore(concurrency)

@@ -1304,10 +1304,19 @@
                 if      (msg.type === "progress") handleProgress(msg.data);
                 else if (msg.type === "complete") handleComplete(msg.data);
                 else if (msg.type === "log")      addLog("SYS", msg.message);
+                else if (msg.type === "error")    handleScanError(msg.message);
+                // type: "ping" is a keep-alive — silently ignored
             } catch(_) {}
         };
         socket.onclose = () => setTimeout(connectWebSocket, 2500);
     }
+
+    function handleScanError(msg) {
+        setScanRunning(false);
+        document.getElementById("progress-bar").style.display = "none";
+        addLog("ERROR", msg || "Scan failed with an unknown error.");
+    }
+
 
     function handleProgress(p) {
         const pct = Math.min(Math.max(p.percent || 0, 0), 100);

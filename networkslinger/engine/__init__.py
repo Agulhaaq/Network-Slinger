@@ -2,7 +2,7 @@
 Network Slinger Engine package.
 """
 
-from .arp_finder import async_resolve_mac, resolve_mac
+from .arp_finder import async_resolve_mac, resolve_mac, reset_arp_cache
 from .banner_grabber import grab_banner_for_port
 from .crawler import NetworkSlingerCrawler
 from .host_discovery import discover_hosts, probe_ip_alive

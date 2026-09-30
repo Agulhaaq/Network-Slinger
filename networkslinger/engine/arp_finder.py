@@ -50,6 +50,12 @@ def get_arp_cache() -> Dict[str, str]:
 _cached_arp_table: Optional[Dict[str, str]] = None
 
 
+def reset_arp_cache() -> None:
+    """Clears the cached ARP table so the next resolve_mac call fetches fresh data."""
+    global _cached_arp_table
+    _cached_arp_table = None
+
+
 def resolve_mac(ip: str) -> Optional[str]:
     """
     Resolves the MAC address for an IPv4 address.
@@ -71,3 +77,4 @@ async def async_resolve_mac(ip: str) -> Optional[str]:
     """Asynchronously resolves the MAC address in a thread pool."""
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, resolve_mac, ip)
+

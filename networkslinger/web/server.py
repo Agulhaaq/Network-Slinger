@@ -124,13 +124,15 @@ async def trigger_scan(config: ScanConfig):
     """Triggers an asynchronous network scrawl with live WebSocket streaming."""
     global active_report, active_crawler
 
+    # Clear any previous crawler before starting a new scan
+    active_crawler = None
+
     crawler = NetworkSlingerCrawler(config)
     active_crawler = crawler
 
     loop = asyncio.get_running_loop()
 
     def on_progress(p: ScanProgress):
-        # Schedule async broadcast from sync callback
         asyncio.run_coroutine_threadsafe(
             manager.broadcast({
                 "type": "progress",
@@ -142,11 +144,11 @@ async def trigger_scan(config: ScanConfig):
     crawler.register_progress_callback(on_progress)
 
     async def run_scan_job():
-        global active_report
+        global active_report, active_crawler
         try:
             await manager.broadcast({
                 "type": "log",
-                "message": f"Starting scrawl on targets: {config.targets or 'Auto-detected LAN'}"
+                "message": f"Starting scan on targets: {config.targets or 'Auto-detected LAN'}"
             })
             report = await crawler.execute_crawl()
             active_report = report
@@ -156,9 +158,11 @@ async def trigger_scan(config: ScanConfig):
             })
         except Exception as e:
             await manager.broadcast({
-                "type": "log",
-                "message": f"Scrawl error: {str(e)}"
+                "type": "error",
+                "message": f"Scan failed: {str(e)}"
             })
+        finally:
+            active_crawler = None
 
     asyncio.create_task(run_scan_job())
 
@@ -167,6 +171,7 @@ async def trigger_scan(config: ScanConfig):
         "scan_id": crawler.scan_id,
         "targets": config.targets
     }
+
 
 
 @app.get("/api/scan/active")

@@ -1,19 +1,33 @@
-"""
-Deep HTTP/HTTPS Web Scrawler, Technology Stack Fingerprinter & SSL Certificate Auditor.
-"""
-
 import asyncio
 from datetime import datetime, timezone
 import re
 import socket
 import ssl
+import warnings
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 import httpx
 
+# Suppress SSL verification warnings emitted by httpx/httpcore when verify=False
+warnings.filterwarnings("ignore", message=".*ssl.*", category=UserWarning)
+try:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except Exception:
+    pass
+
+# Optional cryptography library for deep SSL cert inspection
+try:
+    from cryptography import x509
+    from cryptography.hazmat.backends import default_backend
+    _CRYPTO_AVAILABLE = True
+except ImportError:
+    _CRYPTO_AVAILABLE = False
+
 from ..models import DiscoveredEndpoint, SSLCertInfo, WebCrawlResult
+
 
 
 COMMON_PROBE_PATHS = [
@@ -33,6 +47,8 @@ COMMON_PROBE_PATHS = [
 
 def extract_ssl_cert(ip: str, port: int, timeout: float = 2.0) -> Optional[SSLCertInfo]:
     """Inspects SSL/TLS certificate details using python's ssl and cryptography."""
+    if not _CRYPTO_AVAILABLE:
+        return None
     try:
         context = ssl.create_default_context()
         context.check_hostname = False
@@ -43,9 +59,6 @@ def extract_ssl_cert(ip: str, port: int, timeout: float = 2.0) -> Optional[SSLCe
                 der_cert = ssock.getpeercert(binary_form=True)
                 if not der_cert:
                     return None
-
-                from cryptography import x509
-                from cryptography.hazmat.backends import default_backend
 
                 cert = x509.load_der_x509_certificate(der_cert, default_backend())
 
@@ -93,6 +106,7 @@ def extract_ssl_cert(ip: str, port: int, timeout: float = 2.0) -> Optional[SSLCe
     except Exception:
         pass
     return None
+
 
 
 def detect_technologies(headers: Dict[str, str], html_content: str) -> List[str]:

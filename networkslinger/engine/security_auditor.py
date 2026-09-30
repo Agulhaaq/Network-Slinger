@@ -17,51 +17,51 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
 
     open_port_nums = {p.port for p in host.open_ports}
 
-    # 1. Check for unencrypted Telnet
+    # 1. Unencrypted Telnet
     if 23 in open_port_nums:
         findings.append(SecurityFinding(
             title="Unencrypted Telnet Service Exposed",
             severity=RiskLevel.HIGH,
             description="Telnet (port 23) transmits all keystrokes, credentials, and session data in cleartext.",
             port=23,
-            remediation="Disable the Telnet daemon and replace with SSH (Secure Shell) on port 22."
+            remediation="Disable Telnet and replace with SSH (port 22)."
         ))
         score += 25
 
-    # 2. Check for plain Docker Socket (Port 2375)
+    # 2. Unencrypted Docker daemon
     if 2375 in open_port_nums:
         findings.append(SecurityFinding(
             title="Exposed Docker Daemon API (No TLS)",
             severity=RiskLevel.CRITICAL,
-            description="Docker socket on TCP 2375 allows unauthenticated root remote code execution on the host system.",
+            description="Docker socket on TCP 2375 allows unauthenticated root remote code execution on the host.",
             port=2375,
-            remediation="Bind Docker socket to localhost (127.0.0.1) or enforce mutual TLS authentication on port 2376."
+            remediation="Bind Docker to localhost only or enforce mutual TLS on port 2376."
         ))
         score += 45
 
-    # 3. Check for Redis exposures
+    # 3. Redis — use the details flag set by banner_grabber (more reliable than string parsing)
     for p in host.open_ports:
         if p.port == 6379:
-            if "Unauthenticated" in p.banner or p.details.get("unauthenticated"):
+            if p.details.get("unauthenticated"):
                 findings.append(SecurityFinding(
                     title="Unauthenticated Redis Database",
                     severity=RiskLevel.CRITICAL,
-                    description="The Redis server does not require authentication; anyone on the network can read/write data or execute commands.",
+                    description="Redis server has no authentication; anyone on the network can read/write or execute commands.",
                     port=6379,
-                    remediation="Configure 'requirepass' in redis.conf and bind Redis strictly to 127.0.0.1."
+                    remediation="Set 'requirepass' in redis.conf and bind Redis to 127.0.0.1."
                 ))
                 score += 45
             else:
                 findings.append(SecurityFinding(
-                    title="Exposed Redis Port",
+                    title="Redis Port Exposed to Network",
                     severity=RiskLevel.MEDIUM,
-                    description="Redis database port 6379 is accessible over the network.",
+                    description="Redis database port 6379 is reachable over the network.",
                     port=6379,
-                    remediation="Restrict access using firewall rules or ACLs to authorized application servers only."
+                    remediation="Restrict access via firewall rules to authorized servers only."
                 ))
                 score += 10
 
-    # 4. Check FTP anonymous access
+    # 4. FTP anonymous access
     for p in host.open_ports:
         if p.port in (21, 2121):
             if p.details.get("anonymous_allowed"):
@@ -70,26 +70,98 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
                     severity=RiskLevel.HIGH,
                     description="The FTP server permits unauthenticated anonymous logins.",
                     port=p.port,
-                    remediation="Disable anonymous FTP login in the server configuration unless intentionally public."
+                    remediation="Disable anonymous FTP access in server configuration."
                 ))
                 score += 25
 
-    # 5. Check Database exposures (MySQL, PostgreSQL, MongoDB, MSSQL)
-    db_ports = {3306: "MySQL", 5432: "PostgreSQL", 27017: "MongoDB", 1433: "MSSQL"}
+    # 5. Direct database exposure (MySQL, PostgreSQL, MongoDB, MSSQL, Oracle)
+    db_ports = {
+        3306: "MySQL",
+        5432: "PostgreSQL",
+        27017: "MongoDB",
+        1433: "MSSQL",
+        1521: "Oracle DB"
+    }
     for port, db_name in db_ports.items():
         if port in open_port_nums:
             findings.append(SecurityFinding(
-                title=f"Direct {db_name} Database Exposure",
+                title=f"Direct {db_name} Database Port Exposed",
                 severity=RiskLevel.MEDIUM,
-                description=f"{db_name} port {port} is directly listening on the network interface.",
+                description=f"{db_name} port {port} is listening directly on the network interface.",
                 port=port,
-                remediation="Ensure database is protected behind a firewall and requires strong authentication."
+                remediation=f"Firewall {port}/tcp to application servers only and verify authentication is required."
             ))
             score += 15
 
-    # 6. Audit Web Services & SSL Certificates
+    # 6. VNC exposed
+    if 5900 in open_port_nums:
+        findings.append(SecurityFinding(
+            title="VNC Remote Desktop Exposed",
+            severity=RiskLevel.HIGH,
+            description="VNC graphical remote desktop (port 5900) is accessible on the network. Often has weak or no authentication.",
+            port=5900,
+            remediation="Restrict VNC to localhost and tunnel through SSH. Enforce VNC password authentication."
+        ))
+        score += 20
+
+    # 7. SNMP exposed
+    for snmp_port in (161, 162):
+        if snmp_port in open_port_nums:
+            findings.append(SecurityFinding(
+                title="SNMP Port Exposed",
+                severity=RiskLevel.MEDIUM,
+                description=f"SNMP port {snmp_port} is reachable. Default community strings ('public'/'private') may allow device enumeration.",
+                port=snmp_port,
+                remediation="Change SNMP community strings, restrict by ACL, or upgrade to SNMPv3 with authentication."
+            ))
+            score += 10
+
+    # 8. Memcached exposed (no authentication by design)
+    if 11211 in open_port_nums:
+        findings.append(SecurityFinding(
+            title="Memcached Cache Server Exposed",
+            severity=RiskLevel.HIGH,
+            description="Memcached (port 11211) has no authentication — anyone on the network can read cached data.",
+            port=11211,
+            remediation="Bind Memcached strictly to 127.0.0.1 and firewall port 11211."
+        ))
+        score += 20
+
+    # 9. Elasticsearch exposed
+    if 9200 in open_port_nums:
+        findings.append(SecurityFinding(
+            title="Elasticsearch API Exposed",
+            severity=RiskLevel.MEDIUM,
+            description="Elasticsearch REST API (port 9200) is accessible. Older versions had no auth by default.",
+            port=9200,
+            remediation="Enable Elasticsearch security features (X-Pack) and restrict port 9200 by firewall."
+        ))
+        score += 15
+
+    # 10. RDP exposed to the network
+    if 3389 in open_port_nums:
+        findings.append(SecurityFinding(
+            title="RDP Remote Desktop Exposed to Network",
+            severity=RiskLevel.LOW,
+            description="RDP (port 3389) is accessible. Frequently targeted by brute-force and ransomware campaigns.",
+            port=3389,
+            remediation="Place RDP behind a VPN or use Network Level Authentication (NLA). Restrict to known IPs."
+        ))
+        score += 8
+
+    # 11. SMB / NetBIOS exposed
+    if 445 in open_port_nums:
+        findings.append(SecurityFinding(
+            title="SMB File Sharing Exposed",
+            severity=RiskLevel.MEDIUM,
+            description="SMB (port 445) is accessible. Ensure the system is patched against EternalBlue (MS17-010) and related exploits.",
+            port=445,
+            remediation="Apply all Windows security patches, disable SMBv1, and firewall port 445 from untrusted networks."
+        ))
+        score += 12
+
+    # 12. Audit Web Services & SSL Certificates
     for web in host.web_services:
-        # SSL Check
         if web.ssl_info:
             if web.ssl_info.is_expired:
                 findings.append(SecurityFinding(
@@ -97,16 +169,16 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
                     severity=RiskLevel.HIGH,
                     description=f"SSL certificate for {web.url} expired on {web.ssl_info.valid_to}.",
                     port=web.port,
-                    remediation="Renew the SSL/TLS certificate immediately with an authorized Certificate Authority."
+                    remediation="Renew the SSL/TLS certificate immediately."
                 ))
                 score += 25
             elif web.ssl_info.days_left is not None and web.ssl_info.days_left < 14:
                 findings.append(SecurityFinding(
                     title="SSL Certificate Expiring Soon",
                     severity=RiskLevel.LOW,
-                    description=f"Certificate for {web.url} will expire in {web.ssl_info.days_left} days.",
+                    description=f"Certificate for {web.url} expires in {web.ssl_info.days_left} days.",
                     port=web.port,
-                    remediation="Schedule automated certificate renewal."
+                    remediation="Schedule automated certificate renewal before expiry."
                 ))
                 score += 5
 
@@ -120,9 +192,10 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
                 ))
                 score += 5
 
-        # Sensitive Endpoints discovered
+        # Sensitive endpoints discovered
         for ep in web.discovered_endpoints:
-            if ".env" in ep.url and ep.status_code == 200:
+            ep_url_lower = ep.url.lower()
+            if ".env" in ep_url_lower and ep.status_code == 200:
                 findings.append(SecurityFinding(
                     title="CRITICAL: Exposed .env Configuration File",
                     severity=RiskLevel.CRITICAL,
@@ -131,7 +204,7 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
                     remediation="Block access to dotfiles (.env, .git) in web server config immediately."
                 ))
                 score += 50
-            elif ".git" in ep.url and ep.status_code == 200:
+            elif ".git" in ep_url_lower and ep.status_code == 200:
                 findings.append(SecurityFinding(
                     title="CRITICAL: Exposed .git Version Control Metadata",
                     severity=RiskLevel.CRITICAL,
@@ -140,28 +213,28 @@ def audit_host(host: HostResult) -> Tuple[int, RiskLevel, List[SecurityFinding]]
                     remediation="Deny public access to .git directories via web server configuration."
                 ))
                 score += 45
-            elif "phpmyadmin" in ep.url.lower():
+            elif "phpmyadmin" in ep_url_lower and ep.status_code in (200, 301, 302):
                 findings.append(SecurityFinding(
                     title="Exposed phpMyAdmin Administration Portal",
                     severity=RiskLevel.MEDIUM,
                     description=f"phpMyAdmin database management panel detected at {ep.url}.",
                     port=web.port,
-                    remediation="Restrict access to phpMyAdmin by IP whitelist or VPN."
+                    remediation="Restrict access to phpMyAdmin by IP allowlist or VPN."
                 ))
                 score += 15
 
-        # Missing Security Headers (if HTTPS)
+        # Missing HSTS header on HTTPS services
         if web.is_https and "Strict-Transport-Security (HSTS)" in web.missing_security_headers:
             findings.append(SecurityFinding(
                 title=f"Missing HSTS Header ({web.url})",
                 severity=RiskLevel.LOW,
-                description="HTTP Strict Transport Security (HSTS) header is missing, allowing potential SSL-stripping attacks.",
+                description="HTTP Strict Transport Security (HSTS) header is absent, enabling SSL-stripping attacks.",
                 port=web.port,
                 remediation="Add 'Strict-Transport-Security: max-age=31536000; includeSubDomains' to response headers."
             ))
             score += 3
 
-    # Calculate overall risk level
+    # Calculate overall risk level from accumulated score
     final_score = min(100, score)
     if final_score >= 70:
         level = RiskLevel.CRITICAL

@@ -113,7 +113,7 @@ def display_hosts_table(hosts: List[HostResult]):
             h.ip,
             h.mac_address or "N/A",
             h.vendor[:20],
-            (h.hostname or h.ssdp_info.friendly_name if h.ssdp_info else "")[:25] or "[dim]-[/dim]",
+            (h.hostname or (h.ssdp_info.friendly_name if h.ssdp_info else ""))[:25] or "[dim]-[/dim]",
             h.device_type.value,
             ports_str,
             risk_styled

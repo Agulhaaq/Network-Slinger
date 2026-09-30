@@ -7,7 +7,7 @@ import socket
 import time
 from typing import Callable, List, Optional
 from ..models import DeviceType, HostResult
-from .arp_finder import async_resolve_mac
+from .arp_finder import async_resolve_mac, reset_arp_cache
 from .interfaces import get_default_gateway
 from .oui_database import lookup_vendor
 
@@ -23,6 +23,9 @@ async def probe_ip_alive(
     """
     Probes an IP to see if it is responsive via ARP (local LAN) or fast TCP probe.
     Returns HostResult if alive, None otherwise.
+
+    TCP probes run concurrently — all ports are tried in parallel, and we stop
+    as soon as any one of them responds (rather than probing sequentially).
     """
     start_time = time.perf_counter()
 
@@ -30,21 +33,32 @@ async def probe_ip_alive(
     mac = await async_resolve_mac(ip)
     is_alive = mac is not None
 
-    # 2. Fast TCP SYN/Connect ping across common ports
+    # 2. Fast TCP probe — run all ports concurrently, return on first success
     if not is_alive:
-        for port in FAST_PING_PORTS:
+        async def try_port(port: int) -> bool:
             try:
-                conn = asyncio.open_connection(ip, port)
-                reader, writer = await asyncio.wait_for(conn, timeout=timeout)
+                reader, writer = await asyncio.wait_for(
+                    asyncio.open_connection(ip, port), timeout=timeout
+                )
                 writer.close()
                 try:
                     await writer.wait_closed()
                 except Exception:
                     pass
-                is_alive = True
-                break
+                return True
             except Exception:
-                continue
+                return False
+
+        tasks = [asyncio.create_task(try_port(p)) for p in FAST_PING_PORTS]
+        try:
+            for coro in asyncio.as_completed(tasks):
+                if await coro:
+                    is_alive = True
+                    break
+        finally:
+            # Cancel any still-running port tasks
+            for t in tasks:
+                t.cancel()
 
     if not is_alive:
         return None
@@ -54,7 +68,7 @@ async def probe_ip_alive(
     # 3. Vendor identification
     vendor = lookup_vendor(mac) if mac else "Unknown Vendor"
 
-    # 4. Reverse DNS lookup
+    # 4. Reverse DNS lookup (non-blocking)
     hostname = ""
     try:
         loop = asyncio.get_running_loop()
@@ -63,16 +77,24 @@ async def probe_ip_alive(
     except Exception:
         pass
 
-    # 5. Classify initial device type
+    # 5. Classify initial device type from vendor name
     dev_type = DeviceType.UNKNOWN
+    vendor_lower = vendor.lower()
     if gateway_ip and ip == gateway_ip:
         dev_type = DeviceType.GATEWAY
-    elif any(k in vendor.lower() for k in ("espressif", "tuya", "philips", "roku", "sonos", "amazon", "google")):
+    elif any(k in vendor_lower for k in ("espressif", "tuya", "philips", "roku", "sonos",
+                                          "amazon", "google", "shelly", "wyze", "ring")):
         dev_type = DeviceType.IOT
-    elif any(k in vendor.lower() for k in ("canon", "epson", "brother", "xerox", "lexmark", "hp")):
+    elif any(k in vendor_lower for k in ("canon", "epson", "brother", "xerox", "lexmark",
+                                          "hp", "ricoh", "konica", "zebra")):
         dev_type = DeviceType.PRINTER
-    elif any(k in vendor.lower() for k in ("cisco", "netgear", "tp-link", "ubiquiti", "mikrotik", "asus")):
+    elif any(k in vendor_lower for k in ("cisco", "netgear", "tp-link", "ubiquiti",
+                                          "mikrotik", "asus", "zyxel", "dlink", "linksys",
+                                          "fortinet", "juniper", "aruba")):
         dev_type = DeviceType.GATEWAY
+    elif any(k in vendor_lower for k in ("apple", "samsung", "oneplus", "huawei", "xiaomi",
+                                          "oppo", "realtek wireless")):
+        dev_type = DeviceType.MOBILE
 
     return HostResult(
         ip=ip,
@@ -92,6 +114,9 @@ async def discover_hosts(
     progress_callback: Optional[Callable[[str, bool], None]] = None
 ) -> List[HostResult]:
     """Scans a list of target IPs concurrently to identify live hosts."""
+    # Reset the ARP cache at the start of each discovery run to avoid stale data
+    reset_arp_cache()
+
     gateway_ip = get_default_gateway()
     semaphore = asyncio.Semaphore(concurrency)
     live_hosts: List[HostResult] = []
